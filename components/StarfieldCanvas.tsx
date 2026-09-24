@@ -5,7 +5,7 @@ interface Star3D {
   y: number;
   z: number;
   baseRadius: number;
-  colorType: "gold" | "blue" | "white" | "stardust";
+  colorType: "cyan" | "coral" | "white" | "stardust";
   twinkleFreq: number;
   twinklePhase: number;
 }
@@ -44,17 +44,18 @@ export function StarfieldCanvas() {
     const STAR_COUNT = 1400;
     const SPEED = 0.55;
 
-    // Color palette matching the simulation's warm gold and celestial blue aesthetic
+    // Refined color palette matching the creative-coding observatory aesthetic:
+    // Clint's cool cyan, Maica's warm coral, and deep space silver-white
     const colors = {
-      gold: { r: 240, g: 218, b: 140 },
-      blue: { r: 164, g: 198, b: 232 },
-      white: { r: 255, g: 255, b: 255 },
-      stardust: { r: 216, g: 188, b: 114 },
+      cyan: { r: 100, g: 210, b: 255 },
+      coral: { r: 255, g: 122, b: 112 },
+      white: { r: 245, g: 248, b: 255 },
+      stardust: { r: 130, g: 145, b: 170 },
     };
 
-    const colorTypes: Star3D["colorType"][] = [
-      "gold",
-      "blue",
+    const colorTypes: ("cyan" | "coral" | "white" | "stardust")[] = [
+      "cyan",
+      "coral",
       "white",
       "white",
       "stardust",
@@ -101,7 +102,7 @@ export function StarfieldCanvas() {
         dy: Math.sin(angle) * speed,
         life: 0,
         maxLife,
-        color: Math.random() > 0.4 ? "#f3e1af" : "#c6ddf3",
+        color: Math.random() > 0.5 ? "#5ac8fa" : "#ff7a70",
       });
     };
 
@@ -157,9 +158,9 @@ export function StarfieldCanvas() {
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Cosmic Nebula Clouds (Deep Navy, Ethereal Amethyst, Gold Stardust)
-      // Top-right stardust glow
-      const goldNebula = ctx.createRadialGradient(
+      // 2. Cosmic Ambient Haze (Cool Cyan, Warm Coral, Charcoal)
+      // Top-right cool cyan glow
+      const cyanNebula = ctx.createRadialGradient(
         width * 0.78,
         height * 0.28,
         0,
@@ -167,14 +168,14 @@ export function StarfieldCanvas() {
         height * 0.28,
         width * 0.48
       );
-      goldNebula.addColorStop(0, "rgba(216, 188, 114, 0.065)");
-      goldNebula.addColorStop(0.5, "rgba(143, 168, 189, 0.035)");
-      goldNebula.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = goldNebula;
+      cyanNebula.addColorStop(0, "rgba(90, 200, 250, 0.04)");
+      cyanNebula.addColorStop(0.5, "rgba(70, 110, 150, 0.015)");
+      cyanNebula.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = cyanNebula;
       ctx.fillRect(0, 0, width, height);
 
-      // Bottom-left deep indigo haze
-      const blueNebula = ctx.createRadialGradient(
+      // Bottom-left warm coral haze
+      const coralNebula = ctx.createRadialGradient(
         width * 0.22,
         height * 0.75,
         0,
@@ -182,10 +183,10 @@ export function StarfieldCanvas() {
         height * 0.75,
         width * 0.55
       );
-      blueNebula.addColorStop(0, "rgba(23, 44, 78, 0.14)");
-      blueNebula.addColorStop(0.6, "rgba(10, 18, 35, 0.05)");
-      blueNebula.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = blueNebula;
+      coralNebula.addColorStop(0, "rgba(255, 122, 112, 0.035)");
+      coralNebula.addColorStop(0.6, "rgba(40, 20, 25, 0.01)");
+      coralNebula.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = coralNebula;
       ctx.fillRect(0, 0, width, height);
 
       // Center subtle celestial aura
@@ -197,7 +198,7 @@ export function StarfieldCanvas() {
         cy - 40,
         width * 0.38
       );
-      centerGlow.addColorStop(0, "rgba(180, 160, 110, 0.038)");
+      centerGlow.addColorStop(0, "rgba(160, 180, 210, 0.025)");
       centerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
       ctx.fillStyle = centerGlow;
       ctx.fillRect(0, 0, width, height);
@@ -288,7 +289,7 @@ export function StarfieldCanvas() {
 
         const meteorGrad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
         meteorGrad.addColorStop(0, "rgba(255, 255, 255, 0)");
-        meteorGrad.addColorStop(0.7, s.color === "#f3e1af" ? "rgba(216, 188, 114, 0.4)" : "rgba(164, 198, 232, 0.4)");
+        meteorGrad.addColorStop(0.7, s.color === "#5ac8fa" ? "rgba(90, 200, 250, 0.4)" : "rgba(255, 122, 112, 0.4)");
         meteorGrad.addColorStop(1, s.color);
 
         ctx.strokeStyle = meteorGrad;
