@@ -1,0 +1,188 @@
+{
+  "sessions": {
+    "sim_3hSJJJzLJj_1RN06": {
+      "sessionId": "sim_3hSJJJzLJj_1RN06",
+      "world": "living-room",
+      "clintMood": "reflective",
+      "maicaMood": "warm",
+      "currentActivity": "Clint is speaking",
+      "activeMusic": null,
+      "activeEvent": null,
+      "eventExpiresAt": null,
+      "eventCooldowns": {},
+      "clintInteractionId": "scripted_fqLOf2KUYY",
+      "maicaInteractionId": null,
+      "createdAt": "2026-09-24T02:24:44.526Z",
+      "updatedAt": "2026-09-24T02:24:44.772Z"
+    }
+  },
+  "messages": [
+    {
+      "messageId": "msg_370UbAjiePy4JBh3",
+      "sessionId": "sim_3hSJJJzLJj_1RN06",
+      "speaker": "clint",
+      "text": "Kumusta ka Jamaica? Unsay gibuhat nimo ron?",
+      "source": "user",
+      "interactionId": null,
+      "createdAt": "2026-09-24T02:24:44.527Z"
+    },
+    {
+      "messageId": "msg_zMAQAC-8mtkUqoZB",
+      "sessionId": "sim_3hSJJJzLJj_1RN06",
+      "speaker": "clint",
+      "text": "Okay ra ko lovey, ikaw? Musta imong adlaw?",
+      "source": "simulation",
+      "interactionId": "scripted_fqLOf2KUYY",
+      "createdAt": "2026-09-24T02:24:44.772Z"
+    }
+  ],
+  "memories": [
+    {
+      "memoryId": "mem_narra",
+      "memoryCategory": "relational_concept",
+      "title": "NARRA ko diri",
+      "description": "The comfort phrase and shelter promise Clint gives when Maica needs someone steady to listen.",
+      "keywords": [
+        "narra",
+        "shelter",
+        "listen",
+        "paminaw",
+        "steady",
+        "diri"
+      ],
+      "createdAt": "2024-03-10T10:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_2nay",
+      "memoryCategory": "joke_riddle_banter",
+      "title": "2 Nay = Tunay",
+      "description": "The recurring playful wordplay between Clint and Maica that became their signature inside joke.",
+      "keywords": [
+        "2 nay",
+        "tunay",
+        "basta",
+        "joke",
+        "banter",
+        "katawa"
+      ],
+      "createdAt": "2024-04-12T14:30:00.000Z"
+    },
+    {
+      "memoryId": "mem_motorcycle",
+      "memoryCategory": "foundational_milestone",
+      "title": "Motorcycle Ride Home After Rain",
+      "description": "Quiet ride home through the cool evening breeze after school hours.",
+      "keywords": [
+        "motorcycle",
+        "motor",
+        "ride",
+        "hatod",
+        "byahe",
+        "rain",
+        "school"
+      ],
+      "createdAt": "2024-05-18T17:45:00.000Z"
+    },
+    {
+      "memoryId": "mem_piano_river",
+      "memoryCategory": "digital_landmark",
+      "title": "River Flows in You Piano Practice",
+      "description": "Clint playing piano pieces and worship tunes while Maica listens quietly.",
+      "keywords": [
+        "piano",
+        "river flows",
+        "canon in d",
+        "music",
+        "tukar",
+        "practice"
+      ],
+      "createdAt": "2024-06-01T16:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_ukulele_thousand",
+      "memoryCategory": "digital_landmark",
+      "title": "A Thousand Years on Ukulele",
+      "description": "Maica strumming chords in the afternoon breeze between garden chores.",
+      "keywords": [
+        "ukulele",
+        "a thousand years",
+        "music",
+        "strum",
+        "garden"
+      ],
+      "createdAt": "2024-06-15T15:20:00.000Z"
+    },
+    {
+      "memoryId": "mem_chess_board",
+      "memoryCategory": "relational_concept",
+      "title": "Late Afternoon Chess & Tactics",
+      "description": "Clint explaining tactical ideas and playful moves while Maica smiles and teases.",
+      "keywords": [
+        "chess",
+        "checkers",
+        "tactics",
+        "dula",
+        "tudlo"
+      ],
+      "createdAt": "2024-07-02T16:30:00.000Z"
+    },
+    {
+      "memoryId": "mem_church_quiet",
+      "memoryCategory": "scriptural_bedrock",
+      "title": "Quiet Sunday Service & Worship",
+      "description": "Shared moments of peace, worship music, and gratitude at church.",
+      "keywords": [
+        "church",
+        "worship",
+        "faith",
+        "sunday",
+        "quiet",
+        "service"
+      ],
+      "createdAt": "2024-08-11T11:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_garden_balay",
+      "memoryCategory": "family_personal_life",
+      "title": "Afternoon Watering Plants & Garden",
+      "description": "Maica checking on green plants and orchids at home, sending quick updates and skl.",
+      "keywords": [
+        "garden",
+        "plants",
+        "balay",
+        "tanom",
+        "water",
+        "skl"
+      ],
+      "createdAt": "2024-08-25T16:15:00.000Z"
+    },
+    {
+      "memoryId": "mem_coding_project",
+      "memoryCategory": "foundational_milestone",
+      "title": "Grade 12 Tech Leadership & Coding",
+      "description": "Clint carrying technical projects, writing C and web systems with pride and dedication.",
+      "keywords": [
+        "coding",
+        "c programming",
+        "systems",
+        "project",
+        "school",
+        "mathlete"
+      ],
+      "createdAt": "2024-09-05T19:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_basta_habit",
+      "memoryCategory": "joke_riddle_banter",
+      "title": "Basta — The Unspoken Agreement",
+      "description": "Saying 'Basta' whenever words run out but both know exactly what was meant.",
+      "keywords": [
+        "basta",
+        "wakoy paki",
+        "wakoy labot",
+        "tease"
+      ],
+      "createdAt": "2024-09-18T21:00:00.000Z"
+    }
+  ]
+}

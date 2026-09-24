@@ -19,33 +19,51 @@ import { postSimulationWorld } from "../endpoints/simulation/world_POST.schema";
 import type { OutputType as SessionOutput } from "../endpoints/simulation/session_POST.schema";
 import { getSimulationDayCycle, type RoutineSnapshot } from "../helpers/simulationDayCycle";
 import { musicLibrary } from "../helpers/musicLibrary";
+import superjson from "superjson";
 import styles from "./_index.module.css";
 
 type Speaker = "clint" | "maica";
 type Message = SessionOutput["messages"][number];
 const SIMULATION_SESSION_VERSION = "scripted-v6";
 
+const formatTime = (seconds: number) => {
+  const total = Math.max(0, Math.floor(seconds));
+  return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
+};
+
 const MUSIC_CATEGORIES = [
-  { id: "all", label: "All sounds", icon: "◌" },
-  { id: "pop", label: "🌤️ Golden Hour", icon: "☀" },
-  { id: "soft-rock", label: "💿 Vintage Room", icon: "◈" },
-  { id: "indie", label: "🌿 Twilight Garden", icon: "✦" },
-  { id: "jazz", label: "☕ Rainy Café", icon: "☕" },
-  { id: "cinematic", label: "🎬 Dream Theater", icon: "◒" },
-  { id: "opm", label: "🇵🇭 Home at Night", icon: "⌂" },
-  { id: "emo", label: "🖤 Midnight Room", icon: "☾" },
+  { id: "all", label: "All Sounds", icon: "◌" },
+  { id: "pop", label: "Pop", icon: "✨" },
+  { id: "jazz", label: "Jazz", icon: "☕" },
+  { id: "indie", label: "Indie", icon: "🌿" },
+  { id: "soft-rock", label: "Soft Rock", icon: "💿" },
+  { id: "emo", label: "Emo", icon: "🖤" },
+  { id: "opm", label: "OPM", icon: "🇵🇭" },
+  { id: "cinematic", label: "Cinematic", icon: "🎬" },
 ] as const;
 
 function MusicWorld({
   session,
   onSelectTrack,
+  youtubePlayer,
+  onPrevTrack,
+  onNextTrack,
 }: {
   session: SessionOutput;
   onSelectTrack: (trackId: string) => Promise<void>;
+  youtubePlayer: ReturnType<typeof useYouTubePlayer>;
+  onPrevTrack: () => void;
+  onNextTrack: () => void;
 }) {
   const [category, setCategory] = useState("all");
   const activeTrack = musicLibrary.find((track) => track.id === session.activeMusic);
-  const tracks = musicLibrary.filter((track) => category === "all" || track.roomIds.includes(category));
+  const isPlaying = youtubePlayer.status === "playing";
+
+  const tracks = musicLibrary.filter((track) => {
+    if (category === "all") return true;
+    return track.genre === category || track.roomIds.includes(category);
+  });
+
   const clintReaction = activeTrack?.description.match(/\*\*Clint:\*\*\n([\s\S]*?)(?:\n\n|$)/)?.[1]?.trim();
   const maicaReaction = activeTrack?.description.match(/\*\*Maica:\*\*\n([\s\S]*)$/)?.[1]?.trim();
 
@@ -53,20 +71,115 @@ function MusicWorld({
     <section className={styles.musicWorld}>
       <div className={styles.musicWorldHead}>
         <div>
-          <span className={styles.panelKicker}>◒ MUSIC WORLD · SHARED LISTENING</span>
-          <h2>{activeTrack?.title ?? "Choose a track"}</h2>
-          <p>{activeTrack?.artist ?? "The room is waiting."}</p>
+          <span className={styles.panelKicker}>◒ MUSIC WORLD · AUDIO LISTENING</span>
+          <h2>{activeTrack?.title ?? "Choose a song to play"}</h2>
+          <p>
+            {activeTrack ? `${activeTrack.artist} · ${activeTrack.year}` : "Pure audio player · Select any genre below"}
+            {activeTrack && (
+              <>
+                {" · "}
+                <a
+                  href={`https://www.youtube.com/watch?v=${activeTrack.youtubeId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.openYoutubeLink}
+                >
+                  YouTube ↗
+                </a>
+              </>
+            )}
+          </p>
         </div>
         <Button
           variant="ghost"
           size="sm"
           className={styles.playMoodButton}
-          onClick={() => void onSelectTrack(tracks[Math.floor(Math.random() * tracks.length)]?.id ?? tracks[0]?.id)}
+          onClick={() => {
+            if (tracks.length === 0) return;
+            const random = tracks[Math.floor(Math.random() * tracks.length)];
+            if (random) void onSelectTrack(random.id);
+          }}
           disabled={tracks.length === 0}
         >
-          <Play size={13} /> Play {category === "all" ? "something" : "this mood"}
+          <Play size={13} /> Play {category === "all" ? "random" : category}
         </Button>
       </div>
+
+      {activeTrack ? (
+        <div className={styles.audioStage}>
+          <div className={styles.audioArtWrapper}>
+            <img src={activeTrack.coverImage} alt={activeTrack.title} className={styles.audioArtCover} />
+            {isPlaying && <div className={styles.audioArtPlayingGlow} />}
+          </div>
+
+          <div className={styles.audioStageBody}>
+            <div className={styles.audioStageHeader}>
+              <div className={styles.audioStatusRow}>
+                <span className={styles.audioLiveBadge}>
+                  {isPlaying ? (
+                    <>
+                      <span className={styles.audioLiveDot} /> Playing Audio
+                    </>
+                  ) : (
+                    <>
+                      <span>◌</span> Ready to Play
+                    </>
+                  )}
+                </span>
+                <span className={styles.audioGenreBadge}>{activeTrack.genre.toUpperCase()}</span>
+              </div>
+              <h3 className={styles.audioTrackTitle}>{activeTrack.title}</h3>
+              <p className={styles.audioTrackArtist}>{activeTrack.artist} · {activeTrack.year}</p>
+            </div>
+
+            <div className={styles.audioStageTransport}>
+              <div className={styles.audioStageButtons}>
+                <button
+                  type="button"
+                  onClick={onPrevTrack}
+                  className={styles.audioStageBtn}
+                  aria-label="Previous track"
+                >
+                  <SkipBack size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => youtubePlayer.togglePlay()}
+                  className={styles.audioStagePlayBtn}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={onNextTrack}
+                  className={styles.audioStageBtn}
+                  aria-label="Next track"
+                >
+                  <SkipForward size={14} />
+                </button>
+              </div>
+
+              <div className={styles.soundwaveContainer + " " + (isPlaying ? styles.soundwaveActive : "")}>
+                <span className={styles.soundwaveBar} />
+                <span className={styles.soundwaveBar} />
+                <span className={styles.soundwaveBar} />
+                <span className={styles.soundwaveBar} />
+                <span className={styles.soundwaveBar} />
+              </div>
+
+              <span className={styles.audioStageTime}>
+                {formatTime(youtubePlayer.progress.currentSeconds)} / {formatTime(youtubePlayer.progress.durationSeconds)}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.audioStageEmpty}>
+          <Headphones size={24} />
+          <p>No audio currently playing. Select a track from any genre below to start.</p>
+        </div>
+      )}
 
       <div className={styles.musicAgents}>
         <div className={styles.musicAgent}>
@@ -80,11 +193,23 @@ function MusicWorld({
       </div>
 
       <div className={styles.musicCategories}>
-        {MUSIC_CATEGORIES.map((item) => (
-          <button key={item.id} type="button" className={category === item.id ? styles.musicCategoryActive : styles.musicCategory} onClick={() => setCategory(item.id)}>
-            <span>{item.icon}</span>{item.label}
-          </button>
-        ))}
+        {MUSIC_CATEGORIES.map((item) => {
+          const count = item.id === "all"
+            ? musicLibrary.length
+            : musicLibrary.filter((t) => t.genre === item.id || t.roomIds.includes(item.id)).length;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={category === item.id ? styles.musicCategoryActive : styles.musicCategory}
+              onClick={() => setCategory(item.id)}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+              <small className={styles.categoryCount}>{count}</small>
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.musicTrackGrid}>
@@ -99,9 +224,9 @@ function MusicWorld({
             <span className={styles.trackCardBody}>
               <strong>{track.title}</strong>
               <small>{track.artist} · {track.year}</small>
-              <span>{track.tags.slice(0, 3).join(" · ")}</span>
+              <span>{track.genre.toUpperCase()} · {track.tags.slice(0, 2).join(" · ")}</span>
             </span>
-            {track.id === activeTrack?.id && <span className={styles.trackPlayingMark}>▶</span>}
+            {track.id === activeTrack?.id && <span className={styles.trackPlayingMark}>{isPlaying ? "▶" : "⏸"}</span>}
           </button>
         ))}
       </div>
@@ -165,6 +290,7 @@ export default function IndexPage() {
   const [olderMessagesCursor, setOlderMessagesCursor] = useState<string | null>(null);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [playbackNotice, setPlaybackNotice] = useState<string | null>(null);
+  const [engineStatus, setEngineStatus] = useState<{ geminiConfigured: boolean; model: string } | null>(null);
   const busyRef = useRef(false);
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
@@ -172,6 +298,18 @@ export default function IndexPage() {
   const youtubePlayer = useYouTubePlayer();
   const fallbackAttemptRef = useRef<{ trackId: string; index: number } | null>(null);
   const hydratePlayerRef = useRef(true);
+
+  useEffect(() => {
+    fetch("/_api/simulation/engine-status")
+      .then((res) => res.text())
+      .then((text) => {
+        try {
+          const parsed = superjson.parse<{ geminiConfigured: boolean; model: string }>(text);
+          setEngineStatus(parsed);
+        } catch {}
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const activeTrack = musicLibrary.find((track) => track.id === session?.activeMusic);
@@ -247,10 +385,10 @@ export default function IndexPage() {
       const nextAttempt = previousAttempt + 1;
       if (nextAttempt < candidates.length) {
         fallbackAttemptRef.current = { trackId: track.id, index: nextAttempt };
+        setPlaybackNotice("Using alternate stream for " + track.title + "…");
         youtubePlayer.playVideoId(candidates[nextAttempt]);
       } else {
-        setPlaybackNotice(track.title + " isn't playable here right now — skipping to the next track.");
-        advanceQueue(1);
+        setPlaybackNotice(track.title + " has embedding restrictions. Click \"YouTube ↗\" to watch or select another song.");
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -482,10 +620,16 @@ export default function IndexPage() {
 
       <header className={styles.header}>
         <div>
-          <div className={styles.eyebrow}><span className={styles.signalDot} />{realtimeStatus === "connected" ? "SIMULATION LIVE" : "SIMULATION CONNECTING"} · {dayCycle.timeLabel}</div>
+          <div className={styles.eyebrow}>
+            <span className={styles.signalDot} />
+            {realtimeStatus === "connected" ? "SIMULATION LIVE" : "SIMULATION CONNECTING"} · {dayCycle.timeLabel}
+          </div>
           <h1>Simulation World</h1>
         </div>
         <div className={styles.headerMeta}>
+          <span className={styles.engineBadge + " " + (engineStatus?.geminiConfigured ? styles.engineBadgeGemini : styles.engineBadgeScripted)}>
+            {engineStatus?.geminiConfigured ? "✨ Gemini 3.5 Flash Lite" : "📜 Scripted Engine"}
+          </span>
           <span>{worldLabel}</span>
           <span>{dayCycle.dayLabel}</span>
           <Button variant="ghost" size="icon" aria-label="Open simulation controls" onClick={() => setPanelOpen(true)}><Activity size={17} /></Button>
@@ -512,50 +656,63 @@ export default function IndexPage() {
         </div>
       </section>
 
+      {/* Hidden persistent YouTube audio engine - video is completely hidden, pure audio plays */}
+      <div className={styles.hiddenAudioMount} aria-hidden="true">
+        <div id="simulation-yt-mount" ref={youtubePlayer.mountRef} />
+      </div>
+
       <section className={styles.chatPanel}>
         {session?.world === "music-room" ? (
-          <MusicWorld session={session} onSelectTrack={playTrack} />
+          session && (
+            <MusicWorld
+              session={session}
+              onSelectTrack={playTrack}
+              youtubePlayer={youtubePlayer}
+              onPrevTrack={() => advanceQueue(-1)}
+              onNextTrack={() => advanceQueue(1)}
+            />
+          )
         ) : (
-        <>
-        <div className={styles.chatHead}>
-          <div><span className={styles.panelKicker}><MessageCircle size={14} /> SHARED CONVERSATION</span><h2>{isObserving ? "They are talking." : "They are just living."}</h2></div>
-          <div className={styles.aiStatus}><span /> {isObserving ? "autonomous mode" : "human guided"}</div>
-        </div>
+          <>
+          <div className={styles.chatHead}>
+            <div><span className={styles.panelKicker}><MessageCircle size={14} /> SHARED CONVERSATION</span><h2>{isObserving ? "They are talking." : "They are just living."}</h2></div>
+            <div className={styles.aiStatus}><span /> {isObserving ? "autonomous mode" : "human guided"}</div>
+          </div>
 
-        {error && <div className={styles.errorBar}>{error}</div>}
+          {error && <div className={styles.errorBar}>{error}</div>}
 
-        <div
-          ref={messageScrollRef}
-          className={styles.messages}
-          onScroll={handleMessageScroll}
-          role="log"
-          aria-live="polite"
-          aria-label="Simulation conversation"
-        >
-          {isLoadingOlder && <div className={styles.historyLoader}>Loading older conversation…</div>}
-          {messages.length === 0 ? (
-            <div className={styles.emptyState}>
-              <Orbit size={18} /><span>No conversation exists yet.</span><small>Send a message or let them begin without you.</small>
-            </div>
-          ) : messages.map((message) => (
-            <motion.article layout="position" key={message.messageId} className={styles.message + " " + (message.source === "user" ? styles.userMessage : (message.speaker === "clint" ? styles.clintMessage : styles.maicaMessage))} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <div className={styles.messageMeta}>
-                <span>{message.source === "user" ? "YOU → " + message.speaker.toUpperCase() : message.speaker === "clint" ? "CLINT" : "MAICA"}</span>
-                <time>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</time>
+          <div
+            ref={messageScrollRef}
+            className={styles.messages}
+            onScroll={handleMessageScroll}
+            role="log"
+            aria-live="polite"
+            aria-label="Simulation conversation"
+          >
+            {isLoadingOlder && <div className={styles.historyLoader}>Loading older conversation…</div>}
+            {messages.length === 0 ? (
+              <div className={styles.emptyState}>
+                <Orbit size={18} /><span>No conversation exists yet.</span><small>Send a message or let them begin without you.</small>
               </div>
-              <p>{message.text}</p>
-            </motion.article>
-          ))}
-        </div>
+            ) : messages.map((message) => (
+              <motion.article layout="position" key={message.messageId} className={styles.message + " " + (message.source === "user" ? styles.userMessage : (message.speaker === "clint" ? styles.clintMessage : styles.maicaMessage))} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <div className={styles.messageMeta}>
+                  <span>{message.source === "user" ? "YOU → " + message.speaker.toUpperCase() : message.speaker === "clint" ? "CLINT" : "MAICA"}</span>
+                  <time>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</time>
+                </div>
+                <p>{message.text}</p>
+              </motion.article>
+            ))}
+          </div>
 
-        <div className={styles.composer}>
-          <Button variant="ghost" size="sm" className={styles.speakerSwitch} onClick={() => setActiveSpeaker((current) => current === "clint" ? "maica" : "clint")} aria-label="Switch message target">
-            <span className={styles.smallAgent}>{activeSpeaker === "clint" ? "C" : "M"}</span>{activeSpeaker === "clint" ? "AI CLINT" : "AI MAICA"}
-          </Button>
-          <Input disabled={!session || isSending} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(); }} placeholder={session ? "Write into the simulation..." : "Initializing session..."} aria-label="Simulation message" />
-          <Button size="sm" onClick={() => void sendMessage()} disabled={!session || isSending || !draft.trim()}><Radio size={14} /> {isSending ? "Replying" : "Send"}</Button>
-        </div>
-        </>
+          <div className={styles.composer}>
+            <Button variant="ghost" size="sm" className={styles.speakerSwitch} onClick={() => setActiveSpeaker((current) => current === "clint" ? "maica" : "clint")} aria-label="Switch message target">
+              <span className={styles.smallAgent}>{activeSpeaker === "clint" ? "C" : "M"}</span>{activeSpeaker === "clint" ? "AI CLINT" : "AI MAICA"}
+            </Button>
+            <Input disabled={!session || isSending} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(); }} placeholder={session ? "Write into the simulation..." : "Initializing session..."} aria-label="Simulation message" />
+            <Button size="sm" onClick={() => void sendMessage()} disabled={!session || isSending || !draft.trim()}><Radio size={14} /> {isSending ? "Replying" : "Send"}</Button>
+          </div>
+          </>
         )}
       </section>
 
@@ -564,17 +721,43 @@ export default function IndexPage() {
         const progressRatio = youtubePlayer.progress.durationSeconds > 0
           ? youtubePlayer.progress.currentSeconds / youtubePlayer.progress.durationSeconds
           : 0;
-        const formatTime = (seconds: number) => {
-          const total = Math.max(0, Math.floor(seconds));
-          return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
-        };
         return (
           <div className={styles.nowPlayingBar + " " + (nowPlaying ? "" : styles.nowPlayingBarIdle)}>
             {playbackNotice && <div className={styles.playbackNotice}>{playbackNotice}</div>}
-            <div className={styles.nowPlayingArt} id="simulation-yt-mount" ref={youtubePlayer.mountRef} />
+            <div
+              className={styles.nowPlayingArt}
+              onClick={() => {
+                if (session?.world !== "music-room") {
+                  void changeWorld("music-room");
+                }
+              }}
+              title="Click to view in Music World"
+            >
+              {nowPlaying ? (
+                <img src={nowPlaying.coverImage} alt={nowPlaying.title} className={styles.nowPlayingCover} />
+              ) : (
+                <Headphones size={18} style={{ color: "var(--muted-foreground)" }} />
+              )}
+            </div>
             <div className={styles.nowPlayingInfo}>
               <strong>{nowPlaying?.title ?? "Nothing playing"}</strong>
-              <small>{nowPlaying?.artist ?? "Pick a track in Music World"}</small>
+              <small>
+                {nowPlaying?.artist ?? "Pick a track in Music World"}
+                {nowPlaying && (
+                  <>
+                    {" · "}
+                    <a
+                      href={`https://www.youtube.com/watch?v=${nowPlaying.youtubeId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.openYoutubeLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      YouTube ↗
+                    </a>
+                  </>
+                )}
+              </small>
             </div>
             <div className={styles.nowPlayingTransport}>
               <button type="button" disabled={!nowPlaying} aria-label="Previous track" onClick={() => advanceQueue(-1)}><SkipBack size={15} /></button>
@@ -617,7 +800,9 @@ export default function IndexPage() {
         <Button variant={isObserving ? "secondary" : "primary"} size="sm" onClick={() => setIsObserving((current) => !current)} disabled={!session || isSending}>
           {isObserving ? <Pause size={14} /> : <Play size={14} />} {isObserving ? "Stop observing" : "Observe AI Simulation"}
         </Button>
-        <div className={styles.footerHint}><Moon size={14} /> Scripted engine <strong>{isObserving ? "active" : "idle"}</strong></div>
+        <div className={styles.footerHint}>
+          <Moon size={14} /> {engineStatus?.geminiConfigured ? "Gemini 3.5 Flash Lite" : "Scripted Engine"} <strong>{isObserving ? "active" : "idle"}</strong>
+        </div>
       </footer>
 
       <AnimatePresence>
@@ -627,12 +812,33 @@ export default function IndexPage() {
               <div><span className={styles.panelKicker}><Sparkles size={14} /> SIMULATION CONTROL</span><h3>World state</h3></div>
               <Button variant="ghost" size="icon" onClick={() => setPanelOpen(false)} aria-label="Close controls"><X size={17} /></Button>
             </div>
-            <div className={styles.controlBlock}><span>SESSION</span><strong>{session ? "Persistent" : "Starting..."}</strong><small>Messages and world state are stored in Postgres.</small></div>
+            <div className={styles.controlBlock}>
+              <span>SESSION</span>
+              <strong>{session ? "Persistent" : "Starting..."}</strong>
+              <small>Messages, memories, and simulation state are saved to the persistent local data store (no external database required).</small>
+            </div>
+            <div className={styles.controlBlock}>
+              <span>AI ENGINE</span>
+              <strong>{engineStatus?.geminiConfigured ? "Gemini 3.5 Flash Lite (Active)" : "Scripted Engine (Active)"}</strong>
+              <small>
+                {engineStatus?.geminiConfigured
+                  ? "Ultra-fast, lightweight conversation generation powered by Gemini 3.5 Flash Lite with memory retrieval and character personas."
+                  : "Running locally with the scripted dialogue and random-event engine. To enable live Gemini AI, provide GEMINI_API_KEY in your .env file."}
+              </small>
+            </div>
             <div className={styles.controlBlock}><span>DAY CYCLE</span><strong>{dayCycle.phase}</strong><small>{dayCycle.dateLabel} · {dayCycle.timeLabel} · Asia/Manila</small></div>
-            <div className={styles.controlBlock}><span>AUTONOMOUS SIMULATION</span><strong>{isObserving ? "Running" : "Idle"}</strong><small>Fully scripted, no external AI calls. The random-event and dialogue engine runs locally, on or off.</small></div>
+            <div className={styles.controlBlock}>
+              <span>AUTONOMOUS SIMULATION</span>
+              <strong>{isObserving ? "Running" : "Idle"}</strong>
+              <small>Generates ambient thoughts and natural partner interactions as time progresses.</small>
+            </div>
             <div className={styles.controlBlock}><span>RIGHT NOW</span><strong>{dayCycle.sharedActivity}</strong><small>Clint · {dayCycle.clintActivity}<br />Maica · {dayCycle.maicaActivity}</small></div>
             <div className={styles.controlBlock}><span>REALTIME</span><strong>{realtimeStatus}</strong><small>World changes and simulation turns are broadcast to connected clients.</small></div>
-            <div className={styles.controlBlock}><span>MUSIC WORLD</span><strong>{musicLibrary.length} tracks</strong><small>YouTube embeds come directly from the music library. Track selection, agent reactions, and active music are persisted in Postgres.</small></div>
+            <div className={styles.controlBlock}>
+              <span>MUSIC WORLD</span>
+              <strong>{musicLibrary.length} tracks</strong>
+              <small>YouTube embeds come directly from the music library. Track selection, agent reactions, and active music are persisted locally.</small>
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>

@@ -37,5 +37,11 @@ export async function handle(request: Request) {
   if (!result.ok) {
     return json({ error: result.error.message }, 500);
   }
-  return json({ token: result.token, wssEndpoint: result.wssEndpoint, userId });
+  let wssEndpoint = result.wssEndpoint;
+  if (!wssEndpoint && request?.url) {
+    const url = new URL(request.url);
+    const proto = url.protocol === "https:" ? "wss:" : "ws:";
+    wssEndpoint = `${proto}//${url.host}/_ws`;
+  }
+  return json({ token: result.token, wssEndpoint, userId });
 }

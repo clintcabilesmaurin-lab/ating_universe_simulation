@@ -3,6 +3,8 @@ import { nanoid } from "nanoid";
 import { publish } from "@floot/realtime";
 import { db } from "../../helpers/db";
 import { simulationScriptedChatReply } from "../../helpers/simulationScriptedTurn";
+import { simulationMemoryRetriever } from "../../helpers/simulationMemoryRetriever";
+import { generateGeminiChatReply, isGeminiActive } from "../../helpers/geminiSimulation";
 import { chatSchema } from "./chat_POST.schema";
 
 export async function handle(request: Request): Promise<Response> {
@@ -52,12 +54,46 @@ export async function handle(request: Request): Promise<Response> {
       createdAt: now,
     }).execute();
 
-    const replyText = await simulationScriptedChatReply({
-      speaker: parsed.data.speaker,
-      message: parsed.data.message,
-      now,
-    });
-    const interactionId = "scripted_" + nanoid(10);
+    let replyText: string | null = null;
+    let interactionId = "scripted_" + nanoid(10);
+    let source = "simulation";
+
+    if (isGeminiActive()) {
+      try {
+        const memories = await simulationMemoryRetriever(parsed.data.message, 3);
+        const history = await db
+          .selectFrom("simulationMessages")
+          .selectAll()
+          .where("sessionId", "=", session.sessionId)
+          .orderBy("createdAt", "desc")
+          .limit(6)
+          .execute();
+
+        replyText = await generateGeminiChatReply({
+          speaker: parsed.data.speaker,
+          message: parsed.data.message,
+          world: session.world,
+          currentActivity: session.currentActivity,
+          retrievedMemories: memories.map((m) => ({ title: m.title, description: m.description })),
+          recentHistory: history.reverse().map((h) => ({ speaker: h.speaker, text: h.text })),
+        });
+
+        if (replyText) {
+          interactionId = "gemini_" + nanoid(10);
+          source = "gemini";
+        }
+      } catch (err) {
+        console.warn("[Chat Endpoint] Gemini failed, falling back to scripted:", err);
+      }
+    }
+
+    if (!replyText) {
+      replyText = await simulationScriptedChatReply({
+        speaker: parsed.data.speaker,
+        message: parsed.data.message,
+        now,
+      });
+    }
 
     const aiNow = new Date();
     await db.insertInto("simulationMessages").values({
@@ -65,7 +101,7 @@ export async function handle(request: Request): Promise<Response> {
       sessionId: session.sessionId,
       speaker: parsed.data.speaker,
       text: replyText,
-      source: "simulation",
+      source,
       interactionId,
       createdAt: aiNow,
     }).execute();

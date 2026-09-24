@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@floot/realtime": ["./floot-realtime/index.ts"]
+    }
+  },
+  "include": [
+    "src",
+    "pages",
+    "components",
+    "helpers",
+    "endpoints",
+    "floot-realtime",
+    "server.ts",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "**/*.example.tsx",
+    "**/*.spec.tsx",
+    "node_modules",
+    "dist"
+  ]
+}

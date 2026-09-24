@@ -1,25 +1,355 @@
-import {type GeneratedAlways, Kysely, CamelCasePlugin} from 'kysely'
-import {PostgresJSDialect} from 'kysely-postgres-js'
-import {DB, kyselyIdentifierOverrides} from './schema'
-import postgres from 'postgres'
+import fs from "node:fs";
+import path from "node:path";
+import { type Kysely } from "kysely";
+import { DB } from "./schema";
 
-// kysely's CamelCasePlugin can't recover a snake_case name that has an
-// underscore directly before a digit (reminder_48h_sent -> reminder48hSent ->
-// reminder48h_sent). The generated schema exports the exact spelling for such
-// identifiers; everything else falls through to the default mapping.
-class FlootCamelCasePlugin extends CamelCasePlugin {
-  protected override snakeCase(str: string): string {
-    return kyselyIdentifierOverrides[str] ?? super.snakeCase(str)
+// Local persistent database store. No external database or connection strings required.
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const DB_FILE = path.join(DATA_DIR, "simulation_store.json");
+
+const defaultMemories = [
+  {
+    memoryId: "mem_narra",
+    memoryCategory: "relational_concept",
+    title: "NARRA ko diri",
+    description:
+      "The comfort phrase and shelter promise Clint gives when Maica needs someone steady to listen.",
+    keywords: ["narra", "shelter", "listen", "paminaw", "steady", "diri"],
+    createdAt: new Date("2024-03-10T10:00:00Z"),
+  },
+  {
+    memoryId: "mem_2nay",
+    memoryCategory: "joke_riddle_banter",
+    title: "2 Nay = Tunay",
+    description:
+      "The recurring playful wordplay between Clint and Maica that became their signature inside joke.",
+    keywords: ["2 nay", "tunay", "basta", "joke", "banter", "katawa"],
+    createdAt: new Date("2024-04-12T14:30:00Z"),
+  },
+  {
+    memoryId: "mem_motorcycle",
+    memoryCategory: "foundational_milestone",
+    title: "Motorcycle Ride Home After Rain",
+    description:
+      "Quiet ride home through the cool evening breeze after school hours.",
+    keywords: ["motorcycle", "motor", "ride", "hatod", "byahe", "rain", "school"],
+    createdAt: new Date("2024-05-18T17:45:00Z"),
+  },
+  {
+    memoryId: "mem_piano_river",
+    memoryCategory: "digital_landmark",
+    title: "River Flows in You Piano Practice",
+    description:
+      "Clint playing piano pieces and worship tunes while Maica listens quietly.",
+    keywords: ["piano", "river flows", "canon in d", "music", "tukar", "practice"],
+    createdAt: new Date("2024-06-01T16:00:00Z"),
+  },
+  {
+    memoryId: "mem_ukulele_thousand",
+    memoryCategory: "digital_landmark",
+    title: "A Thousand Years on Ukulele",
+    description:
+      "Maica strumming chords in the afternoon breeze between garden chores.",
+    keywords: ["ukulele", "a thousand years", "music", "strum", "garden"],
+    createdAt: new Date("2024-06-15T15:20:00Z"),
+  },
+  {
+    memoryId: "mem_chess_board",
+    memoryCategory: "relational_concept",
+    title: "Late Afternoon Chess & Tactics",
+    description:
+      "Clint explaining tactical ideas and playful moves while Maica smiles and teases.",
+    keywords: ["chess", "checkers", "tactics", "dula", "tudlo"],
+    createdAt: new Date("2024-07-02T16:30:00Z"),
+  },
+  {
+    memoryId: "mem_church_quiet",
+    memoryCategory: "scriptural_bedrock",
+    title: "Quiet Sunday Service & Worship",
+    description:
+      "Shared moments of peace, worship music, and gratitude at church.",
+    keywords: ["church", "worship", "faith", "sunday", "quiet", "service"],
+    createdAt: new Date("2024-08-11T11:00:00Z"),
+  },
+  {
+    memoryId: "mem_garden_balay",
+    memoryCategory: "family_personal_life",
+    title: "Afternoon Watering Plants & Garden",
+    description:
+      "Maica checking on green plants and orchids at home, sending quick updates and skl.",
+    keywords: ["garden", "plants", "balay", "tanom", "water", "skl"],
+    createdAt: new Date("2024-08-25T16:15:00Z"),
+  },
+  {
+    memoryId: "mem_coding_project",
+    memoryCategory: "foundational_milestone",
+    title: "Grade 12 Tech Leadership & Coding",
+    description:
+      "Clint carrying technical projects, writing C and web systems with pride and dedication.",
+    keywords: ["coding", "c programming", "systems", "project", "school", "mathlete"],
+    createdAt: new Date("2024-09-05T19:00:00Z"),
+  },
+  {
+    memoryId: "mem_basta_habit",
+    memoryCategory: "joke_riddle_banter",
+    title: "Basta — The Unspoken Agreement",
+    description:
+      "Saying 'Basta' whenever words run out but both know exactly what was meant.",
+    keywords: ["basta", "wakoy paki", "wakoy labot", "tease"],
+    createdAt: new Date("2024-09-18T21:00:00Z"),
+  },
+];
+
+const sessionStore = new Map<string, any>();
+let messageStore: any[] = [];
+let memoryStore: any[] = [...defaultMemories];
+
+function initPersistence() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    if (fs.existsSync(DB_FILE)) {
+      const raw = fs.readFileSync(DB_FILE, "utf-8");
+      const data = JSON.parse(raw);
+      if (data.sessions && typeof data.sessions === "object") {
+        for (const [k, v] of Object.entries(data.sessions as Record<string, any>)) {
+          const sessionVal = (v && typeof v === "object" ? v : {}) as Record<string, any>;
+          sessionStore.set(k, {
+            ...sessionVal,
+            createdAt: sessionVal.createdAt ? new Date(sessionVal.createdAt) : new Date(),
+            updatedAt: sessionVal.updatedAt ? new Date(sessionVal.updatedAt) : new Date(),
+          });
+        }
+      }
+      if (Array.isArray(data.messages)) {
+        messageStore = data.messages.map((m: any) => ({
+          ...m,
+          createdAt: m.createdAt ? new Date(m.createdAt) : new Date(),
+        }));
+      }
+      if (Array.isArray(data.memories) && data.memories.length > 0) {
+        memoryStore = data.memories.map((mem: any) => ({
+          ...mem,
+          createdAt: mem.createdAt ? new Date(mem.createdAt) : new Date(),
+        }));
+      }
+    } else {
+      savePersistence();
+    }
+  } catch (err) {
+    console.warn("Could not read persistence file, initializing memory store:", err);
   }
 }
 
-export const db = new Kysely<DB>({
-plugins: [new FlootCamelCasePlugin()],
-dialect: new PostgresJSDialect({
-postgres: postgres(process.env.FLOOT_DATABASE_URL, {
-prepare: false,
-idle_timeout: 10,
-max: 3,
-}),
-}),
-})
+let saveTimer: NodeJS.Timeout | null = null;
+function savePersistence() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      const data = {
+        sessions: Object.fromEntries(sessionStore.entries()),
+        messages: messageStore,
+        memories: memoryStore,
+      };
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch (err) {
+      console.error("Error writing to persistent store:", err);
+    }
+  }, 40);
+}
+
+initPersistence();
+
+function createDatabaseDriver() {
+  return {
+    selectFrom(table: string) {
+      const filters: Array<{ field: string; op: string; value: any }> = [];
+      let sortField: string | null = null;
+      let sortDirection: "asc" | "desc" = "asc";
+      let limitCount: number | null = null;
+
+      const queryBuilder: any = {
+        selectAll() {
+          return queryBuilder;
+        },
+        select(fields: string[]) {
+          return queryBuilder;
+        },
+        where(field: string, op: string, value: any) {
+          filters.push({ field, op, value });
+          return queryBuilder;
+        },
+        orderBy(field: string, direction: "asc" | "desc" = "asc") {
+          sortField = field;
+          sortDirection = direction;
+          return queryBuilder;
+        },
+        limit(n: number) {
+          limitCount = n;
+          return queryBuilder;
+        },
+        $if(condition: boolean, fn: (builder: any) => any) {
+          if (condition) fn(queryBuilder);
+          return queryBuilder;
+        },
+        async execute(): Promise<any[]> {
+          let rows: any[] = [];
+          if (table === "simulationSessions") {
+            rows = Array.from(sessionStore.values());
+          } else if (table === "simulationMessages") {
+            rows = [...messageStore];
+          } else if (table === "simulationMemories") {
+            rows = [...memoryStore];
+          }
+
+          for (const f of filters) {
+            rows = rows.filter((r) => {
+              if (f.op === "=") return r[f.field] === f.value;
+              if (f.op === "<") {
+                const val = r[f.field] instanceof Date ? r[f.field].getTime() : new Date(r[f.field]).getTime();
+                const target = f.value instanceof Date ? f.value.getTime() : new Date(f.value).getTime();
+                return val < target;
+              }
+              return true;
+            });
+          }
+
+          if (sortField) {
+            rows.sort((a, b) => {
+              const valA = a[sortField!] instanceof Date ? a[sortField!].getTime() : a[sortField!];
+              const valB = b[sortField!] instanceof Date ? b[sortField!].getTime() : b[sortField!];
+              if (valA < valB) return sortDirection === "desc" ? 1 : -1;
+              if (valA > valB) return sortDirection === "desc" ? -1 : 1;
+              return 0;
+            });
+          }
+
+          if (limitCount !== null) {
+            rows = rows.slice(0, limitCount);
+          }
+
+          return rows;
+        },
+        async executeTakeFirst(): Promise<any | undefined> {
+          const res = await queryBuilder.execute();
+          return res[0];
+        },
+      };
+
+      return queryBuilder;
+    },
+
+    insertInto(table: string) {
+      let insertValues: any = null;
+
+      const insertBuilder: any = {
+        values(vals: any) {
+          insertValues = vals;
+          return insertBuilder;
+        },
+        returningAll() {
+          return insertBuilder;
+        },
+        returning(fields: string[]) {
+          return insertBuilder;
+        },
+        async execute(): Promise<void> {
+          if (table === "simulationMessages") {
+            const items = Array.isArray(insertValues) ? insertValues : [insertValues];
+            for (const item of items) {
+              messageStore.push({
+                ...item,
+                createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt || Date.now()),
+              });
+            }
+            savePersistence();
+          }
+        },
+        async executeTakeFirst(): Promise<any> {
+          if (table === "simulationSessions") {
+            const record = {
+              sessionId: insertValues.sessionId,
+              world: insertValues.world ?? "living-room",
+              clintMood: insertValues.clintMood ?? "reflective",
+              maicaMood: insertValues.maicaMood ?? "warm",
+              currentActivity: insertValues.currentActivity ?? "sitting together",
+              activeMusic: insertValues.activeMusic ?? null,
+              activeEvent: insertValues.activeEvent ?? null,
+              eventExpiresAt: insertValues.eventExpiresAt ?? null,
+              eventCooldowns: insertValues.eventCooldowns ?? {},
+              clintInteractionId: insertValues.clintInteractionId ?? null,
+              maicaInteractionId: insertValues.maicaInteractionId ?? null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            sessionStore.set(record.sessionId, record);
+            savePersistence();
+            return record;
+          }
+          return insertValues;
+        },
+        async executeTakeFirstOrThrow(): Promise<any> {
+          return insertBuilder.executeTakeFirst();
+        },
+      };
+
+      return insertBuilder;
+    },
+
+    updateTable(table: string) {
+      let updateValues: any = {};
+      const filters: Array<{ field: string; op: string; value: any }> = [];
+
+      const updateBuilder: any = {
+        set(vals: any) {
+          updateValues = { ...updateValues, ...vals };
+          return updateBuilder;
+        },
+        where(field: string, op: string, value: any) {
+          filters.push({ field, op, value });
+          return updateBuilder;
+        },
+        returning(fields: string[]) {
+          return updateBuilder;
+        },
+        async execute(): Promise<void> {
+          if (table === "simulationSessions") {
+            for (const f of filters) {
+              if (f.field === "sessionId" && f.op === "=") {
+                const existing = sessionStore.get(f.value);
+                if (existing) {
+                  Object.assign(existing, updateValues);
+                  savePersistence();
+                }
+              }
+            }
+          }
+        },
+        async executeTakeFirst(): Promise<any> {
+          if (table === "simulationSessions") {
+            for (const f of filters) {
+              if (f.field === "sessionId" && f.op === "=") {
+                const existing = sessionStore.get(f.value);
+                if (existing) {
+                  Object.assign(existing, updateValues);
+                  savePersistence();
+                  return existing;
+                }
+              }
+            }
+          }
+          return undefined;
+        },
+      };
+
+      return updateBuilder;
+    },
+  };
+}
+
+export const db: Kysely<DB> = createDatabaseDriver() as unknown as Kysely<DB>;

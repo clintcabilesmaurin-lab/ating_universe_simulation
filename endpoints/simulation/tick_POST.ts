@@ -4,6 +4,7 @@ import { publish } from "@floot/realtime";
 import { db } from "../../helpers/db";
 import { musicLibrary } from "../../helpers/musicLibrary";
 import { simulationScriptedAmbientTurn } from "../../helpers/simulationScriptedTurn";
+import { generateGeminiAmbientTurn, isGeminiActive } from "../../helpers/geminiSimulation";
 import type { InputType, OutputType } from "./tick_POST.schema";
 
 export async function handle(request: Request): Promise<Response> {
@@ -95,16 +96,40 @@ export async function handle(request: Request): Promise<Response> {
       },
     });
 
+    let messageText = turn.text;
+    let interactionId = "scripted_" + nanoid(10);
+    let source = "simulation";
+
+    if (isGeminiActive() && Math.random() < 0.65) {
+      try {
+        const activeTrack = session.activeMusic ? musicLibrary.find((m) => m.id === session.activeMusic) : null;
+        const geminiTurn = await generateGeminiAmbientTurn({
+          speaker: turn.speaker,
+          world: session.world,
+          currentActivity: session.currentActivity || turn.activity,
+          activeMusicTitle: activeTrack?.title,
+          activeMusicArtist: activeTrack?.artist,
+          recentHistory: history.map((h) => ({ speaker: h.speaker, text: h.text })),
+        });
+        if (geminiTurn) {
+          messageText = geminiTurn;
+          interactionId = "gemini_" + nanoid(10);
+          source = "gemini";
+        }
+      } catch (err) {
+        console.warn("[Tick Endpoint] Gemini turn failed, using scripted:", err);
+      }
+    }
+
     const messageId = "msg_" + nanoid(16);
-    const interactionId = "scripted_" + nanoid(10);
     const createdAt = new Date();
 
     await db.insertInto("simulationMessages").values({
       messageId,
       sessionId: input.sessionId,
       speaker: turn.speaker,
-      text: turn.text,
-      source: "simulation",
+      text: messageText,
+      source,
       interactionId,
       createdAt,
     }).execute();
@@ -128,8 +153,8 @@ export async function handle(request: Request): Promise<Response> {
       message: {
         messageId,
         speaker: turn.speaker,
-        text: turn.text,
-        source: "simulation",
+        text: messageText,
+        source,
         interactionId,
         createdAt: createdAt.toISOString(),
       },

@@ -1,0 +1,8 @@
+{
+  "name": "Ating Universe Simulation",
+  "description": "An interactive, persistent simulation of Clint and Maica's universe featuring 3D cosmos, shared listening, and ambient day-cycle conversations.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

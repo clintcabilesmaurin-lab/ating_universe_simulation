@@ -426,9 +426,9 @@ Kanang song nga murag dugay na nimo kaila. Familiar kaayo ang feeling. Murag old
     coverImage: 'https://img.youtube.com/vi/xK4ZqrLys_k/hqdefault.jpg',
     title: 'Iris',
     artist: 'Goo Goo Dolls',
-    tags: ['soft-rock', 'alt-rock', 'cinematic', 'anthem', 'nostalgic'],
-    roomIds: ['soft-rock', 'listening-lounge'],
-    genre: 'soft-rock',
+    tags: ['emo', 'alt-rock', 'soft-rock', 'cinematic', 'anthem', 'nostalgic'],
+    roomIds: ['emo', 'soft-rock', 'listening-lounge'],
+    genre: 'emo',
     year: 1998,
     isFeatured: true,
     addedAt: '2026-01-14T00:00:00Z',
@@ -445,9 +445,9 @@ Medyo bittersweet siya. Dili siya purely happy, pero beautiful gihapon. Murag na
     coverImage: 'https://img.youtube.com/vi/Jtauh8GcxBY/hqdefault.jpg',
     title: 'Before You Go',
     artist: 'Lewis Capaldi',
-    tags: ['soft-rock', 'ballad', 'powerful', 'emotional', 'acoustic'],
-    roomIds: ['soft-rock', 'listening-lounge'],
-    genre: 'soft-rock',
+    tags: ['emo', 'soft-rock', 'ballad', 'powerful', 'emotional', 'acoustic'],
+    roomIds: ['emo', 'soft-rock', 'listening-lounge'],
+    genre: 'emo',
     year: 2019,
     isFeatured: false,
     addedAt: '2026-01-21T00:00:00Z',
@@ -714,9 +714,9 @@ So soft and comforting. Kanang samtang nag-inom ug mainit nga kape samtang nag-u
     coverImage: 'https://img.youtube.com/vi/emm0uGDGg2o/hqdefault.jpg',
     title: 'Dancing With Your Ghost',
     artist: 'Sasha Alex Sloan',
-    tags: ['jazz', 'acoustic-piano', 'longing', 'cafe', 'melancholy', 'rainy-cafe'],
-    roomIds: ['jazz', 'listening-lounge'],
-    genre: 'jazz',
+    tags: ['emo', 'acoustic-piano', 'longing', 'melancholy', 'cafe'],
+    roomIds: ['emo', 'jazz', 'listening-lounge'],
+    genre: 'emo',
     year: 2019,
     isFeatured: true,
     addedAt: '2026-02-04T02:40:00Z',
@@ -817,8 +817,8 @@ Chilling and deeply moving. The contrast between Billie's delicate falsetto and 
     coverImage: 'https://img.youtube.com/vi/BHpDOlgisNE/hqdefault.jpg',
     title: '14',
     artist: 'Silent Sanctuary',
-    tags: ['opm', 'strings', 'rock-ballad', 'emotional', 'balcony'],
-    roomIds: ['opm', 'listening-lounge'],
+    tags: ['opm', 'emo', 'strings', 'rock-ballad', 'emotional', 'balcony'],
+    roomIds: ['opm', 'emo', 'listening-lounge'],
     genre: 'opm',
     year: 2007,
     isFeatured: false,
@@ -836,8 +836,8 @@ Kanang familiar nga Pinoy emotional sound. Very close to home ang feeling. Somet
     coverImage: 'https://img.youtube.com/vi/I8fFjG9ch5Q/hqdefault.jpg',
     title: "Sa'yo",
     artist: 'Silent Sanctuary',
-    tags: ['opm', 'cello-rock', 'romantic', 'classic-opm', 'balcony'],
-    roomIds: ['opm', 'listening-lounge'],
+    tags: ['opm', 'emo', 'cello-rock', 'romantic', 'classic-opm', 'balcony'],
+    roomIds: ['opm', 'emo', 'listening-lounge'],
     genre: 'opm',
     year: 2013,
     isFeatured: true,
@@ -848,6 +848,26 @@ This one feels more local and personal. Murag less polished in an international-
 
 **Maica:**
 It feels sincere. Kanang simple nga “para nimo ni” feeling. Very Filipino love-song heart. 🤍`,
+  },
+  {
+    id: 'track-emo-fall-for-you',
+    youtubeId: 'pZ12_E5R3qc',
+    fallbackYoutubeIds: ['L-R_3y8y7k4', 'rR1c51q8eQo'],
+    coverImage: 'https://img.youtube.com/vi/pZ12_E5R3qc/hqdefault.jpg',
+    title: 'Fall For You',
+    artist: 'Secondhand Serenade',
+    tags: ['emo', 'acoustic-rock', 'alt-rock', 'nostalgic', '2000s-emo', 'ballad'],
+    roomIds: ['emo', 'listening-lounge'],
+    genre: 'emo',
+    year: 2008,
+    isFeatured: true,
+    addedAt: '2026-02-05T00:00:00Z',
+    metadataSource: 'youtube',
+    description: `**Clint:**
+“Because a girl like you is impossible to find... you're impossible to find.” The definitive acoustic emo anthem of the 2000s. Raw vocals, earnest guitar strums, and pure devotion.
+
+**Maica:**
+Grabe ka classic! Ang chorus pa lang makabalik dayon sa high school days. Kanang earnest acoustic singing nga gikan gyud sa kinahiladman sa kasingkasing. 🖤`,
   },
   {
     id: 'track-027',
@@ -862,4 +882,10 @@ It feels sincere. Kanang simple nga “para nimo ni” feeling. Very Filipino lo
     isFeatured: true,
     addedAt: '2026-01-27T00:00:00Z',
     metadataSource: 'youtube',
-    description: 'An acoustic covenant song cherished for its sincere vows and gentle acoustic guitar
+    description: `**Clint:**
+An acoustic covenant song cherished for its sincere vows and gentle acoustic guitar. It feels peaceful, like sitting under the afternoon sky with someone you care about.
+
+**Maica:**
+Grabe ka sweet ani nga kanta lovey. Very gentle and prayerful ang vibe. Kanang calm assurance nga everything will be okay. 🤍`,
+  },
+];
