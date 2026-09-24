@@ -9,6 +9,7 @@ import { Input } from "../components/Input";
 import { useRealtimeChannel, useRealtimeConnectionStatus } from "../components/FlootRealtimeProvider";
 import { channels } from "../helpers/realtimeChannels";
 import { useYouTubePlayer } from "../helpers/useYouTubePlayer";
+import { StarfieldCanvas } from "../components/StarfieldCanvas";
 import { postSimulationChat } from "../endpoints/simulation/chat_POST.schema";
 import { getSimulationSession } from "../endpoints/simulation/session_GET.schema";
 import { getSimulationMessages } from "../endpoints/simulation/messages_GET.schema";
@@ -24,7 +25,7 @@ import styles from "./_index.module.css";
 
 type Speaker = "clint" | "maica";
 type Message = SessionOutput["messages"][number];
-const SIMULATION_SESSION_VERSION = "scripted-v6";
+const SIMULATION_SESSION_VERSION = "scripted-v7";
 
 const formatTime = (seconds: number) => {
   const total = Math.max(0, Math.floor(seconds));
@@ -261,13 +262,11 @@ function OrbitalCore({ active }: { active: Speaker | null }) {
 
 function SimulatedWorld({ active }: { active: Speaker | null }) {
   return (
-    <Canvas camera={{ position: [0, 0.8, 7], fov: 42 }} dpr={[1, 1.6]}>
-      <color attach="background" args={["#080b12"]} />
-      <fog attach="fog" args={["#080b12", 6, 16]} />
+    <Canvas camera={{ position: [0, 0.8, 7], fov: 42 }} dpr={[1, 1.6]} gl={{ alpha: true }}>
+      <fog attach="fog" args={["#080b12", 8, 22]} />
       <ambientLight intensity={0.4} />
       <pointLight position={[2.8, 2.5, 3]} color="#d8bc72" intensity={7} distance={10} />
       <pointLight position={[-3, -0.8, 1]} color="#7f9ab8" intensity={5} distance={8} />
-      <Stars radius={28} depth={22} count={1400} factor={1.2} saturation={0} fade speed={0.25} />
       <Float speed={0.8} rotationIntensity={0.08} floatIntensity={0.4}>
         <OrbitalCore active={active} />
       </Float>
@@ -614,7 +613,10 @@ export default function IndexPage() {
 
   return (
     <main className={styles.shell}>
-      <div className={styles.canvasLayer} aria-hidden="true"><SimulatedWorld active={activeAgent} /></div>
+      <div className={styles.canvasLayer} aria-hidden="true">
+        <StarfieldCanvas />
+        <SimulatedWorld active={activeAgent} />
+      </div>
       <div className={styles.vignette} />
       <div className={styles.scanline} />
 
@@ -622,16 +624,16 @@ export default function IndexPage() {
         <div>
           <div className={styles.eyebrow}>
             <span className={styles.signalDot} />
-            {realtimeStatus === "connected" ? "SIMULATION LIVE" : "SIMULATION CONNECTING"} · {dayCycle.timeLabel}
+            {session ? "SIMULATION ACTIVE" : "SIMULATION INITIALIZING"} · {dayCycle.timeLabel}
           </div>
           <h1>Simulation World</h1>
         </div>
         <div className={styles.headerMeta}>
           <span className={styles.engineBadge + " " + (engineStatus?.geminiConfigured ? styles.engineBadgeGemini : styles.engineBadgeScripted)}>
-            {engineStatus?.geminiConfigured ? "✨ Gemini 3.5 Flash Lite" : "📜 Scripted Engine"}
+            {engineStatus?.geminiConfigured ? "✨ Gemini" : "📜 Scripted"}
           </span>
-          <span>{worldLabel}</span>
-          <span>{dayCycle.dayLabel}</span>
+          <span className={styles.headerMetaText}>{worldLabel}</span>
+          <span className={styles.headerMetaText}>{dayCycle.dayLabel}</span>
           <Button variant="ghost" size="icon" aria-label="Open simulation controls" onClick={() => setPanelOpen(true)}><Activity size={17} /></Button>
         </div>
       </header>
@@ -692,7 +694,9 @@ export default function IndexPage() {
             {isLoadingOlder && <div className={styles.historyLoader}>Loading older conversation…</div>}
             {messages.length === 0 ? (
               <div className={styles.emptyState}>
-                <Orbit size={18} /><span>No conversation exists yet.</span><small>Send a message or let them begin without you.</small>
+                <Orbit size={20} />
+                <span>No conversation exists yet</span>
+                <small>Send a message below, or let Clint and Maica begin their natural dialogue.</small>
               </div>
             ) : messages.map((message) => (
               <motion.article layout="position" key={message.messageId} className={styles.message + " " + (message.source === "user" ? styles.userMessage : (message.speaker === "clint" ? styles.clintMessage : styles.maicaMessage))} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -707,10 +711,14 @@ export default function IndexPage() {
 
           <div className={styles.composer}>
             <Button variant="ghost" size="sm" className={styles.speakerSwitch} onClick={() => setActiveSpeaker((current) => current === "clint" ? "maica" : "clint")} aria-label="Switch message target">
-              <span className={styles.smallAgent}>{activeSpeaker === "clint" ? "C" : "M"}</span>{activeSpeaker === "clint" ? "AI CLINT" : "AI MAICA"}
+              <span className={styles.smallAgent}>{activeSpeaker === "clint" ? "C" : "M"}</span>
+              <span className={styles.speakerSwitchName}>{activeSpeaker === "clint" ? "AI CLINT" : "AI MAICA"}</span>
             </Button>
             <Input disabled={!session || isSending} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(); }} placeholder={session ? "Write into the simulation..." : "Initializing session..."} aria-label="Simulation message" />
-            <Button size="sm" onClick={() => void sendMessage()} disabled={!session || isSending || !draft.trim()}><Radio size={14} /> {isSending ? "Replying" : "Send"}</Button>
+            <Button size="sm" className={styles.composerSendBtn} onClick={() => void sendMessage()} disabled={!session || isSending || !draft.trim()}>
+              <Radio size={14} />
+              <span className={styles.composerSendText}>{isSending ? "Replying" : "Send"}</span>
+            </Button>
           </div>
           </>
         )}
@@ -795,13 +803,23 @@ export default function IndexPage() {
       })()}
 
       <footer className={styles.footerBar}>
-        <Button variant="ghost" size="sm" onClick={() => void changeWorld("living-room")} className={session?.world === "living-room" ? styles.worldButtonActive : styles.worldButton}><Orbit size={15} />Living Room</Button>
-        <Button variant="ghost" size="sm" onClick={() => void changeWorld("music-room")} className={session?.world === "music-room" ? styles.worldButtonActive : styles.worldButton}><Headphones size={15} />Music World</Button>
-        <Button variant={isObserving ? "secondary" : "primary"} size="sm" onClick={() => setIsObserving((current) => !current)} disabled={!session || isSending}>
-          {isObserving ? <Pause size={14} /> : <Play size={14} />} {isObserving ? "Stop observing" : "Observe AI Simulation"}
+        <Button variant="ghost" size="sm" onClick={() => void changeWorld("living-room")} className={session?.world === "living-room" ? styles.worldButtonActive : styles.worldButton}>
+          <Orbit size={15} />
+          <span className={styles.navLabelDesktop}>Living Room</span>
+          <span className={styles.navLabelMobile}>Living</span>
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => void changeWorld("music-room")} className={session?.world === "music-room" ? styles.worldButtonActive : styles.worldButton}>
+          <Headphones size={15} />
+          <span className={styles.navLabelDesktop}>Music World</span>
+          <span className={styles.navLabelMobile}>Music</span>
+        </Button>
+        <Button variant={isObserving ? "secondary" : "primary"} size="sm" className={styles.observeButton} onClick={() => setIsObserving((current) => !current)} disabled={!session || isSending}>
+          {isObserving ? <Pause size={14} /> : <Play size={14} />}
+          <span className={styles.navLabelDesktop}>{isObserving ? "Stop observing" : "Observe AI Simulation"}</span>
+          <span className={styles.navLabelMobile}>{isObserving ? "Stop" : "Observe"}</span>
         </Button>
         <div className={styles.footerHint}>
-          <Moon size={14} /> {engineStatus?.geminiConfigured ? "Gemini 3.5 Flash Lite" : "Scripted Engine"} <strong>{isObserving ? "active" : "idle"}</strong>
+          <Moon size={14} /> {engineStatus?.geminiConfigured ? "Gemini" : "Scripted"} <strong>{isObserving ? "active" : "idle"}</strong>
         </div>
       </footer>
 

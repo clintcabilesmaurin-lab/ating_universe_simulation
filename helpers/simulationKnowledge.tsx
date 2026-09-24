@@ -110,6 +110,66 @@ export const IMPORTANT_MEMORY_CONTEXTS = [
     summary:
       "Clint moved from feeling invisible to being more active in recitation, volunteering with project equipment, and being treated as a leader by classmates.",
   },
+  {
+    id: "julies-bakery-may31",
+    topics: ["memory", "daily-life", "banter", "future"] as KnowledgeTopic[],
+    summary:
+      "Post-church meeting at Julie's Bakeshop (Tungkop) on May 31, 2026: resolving questions of pity vs love, affirming commitment, kan-on ug gatas, and matching profile pictures.",
+  },
+  {
+    id: "manmade-forest-naga-ride",
+    topics: ["motorcycle", "memory", "daily-life"] as KnowledgeTopic[],
+    summary:
+      "Spontaneous Man-Made Forest and Naga ride: cool shaded forest roads, winding turns, mountain breeze, and Naga boardwalk seaside air.",
+  },
+  {
+    id: "gullas-mountain-sunset",
+    topics: ["motorcycle", "quiet", "memory"] as KnowledgeTopic[],
+    summary:
+      "Gullas mountain view open date: windy mountain roads, breathtaking sunset panorama, cool air, and mutual boundaries of deep respect.",
+  },
+  {
+    id: "dalaguete-father-ride",
+    topics: ["family", "motorcycle", "memory"] as KnowledgeTopic[],
+    summary:
+      "Early morning vegetable run to Dalaguete with Papa at 5:21 AM through Osmeña Peak fog: harsh early training that built resilience and deep filial empathy.",
+  },
+  {
+    id: "papa-makoy-videoke",
+    topics: ["family", "music", "memory"] as KnowledgeTopic[],
+    summary:
+      "Reflecting on Makoy Portado guitarist videos to understand Papa's unspoken emotional depth; Saturday night videoke singing passionate brokenhearted songs.",
+  },
+  {
+    id: "maica-eldest-sister-duty",
+    topics: ["family", "daily-life", "quiet"] as KnowledgeTopic[],
+    summary:
+      "Maica carrying younger siblings to sleep in her arms without a hammock, preparing milk bottles, and handling 4Ps and PhilSys municipal paperwork.",
+  },
+  {
+    id: "laundry-care-kamunggay",
+    topics: ["family", "daily-life", "quiet"] as KnowledgeTopic[],
+    summary:
+      "Exhausting laundry mornings with Zonrox, preparing comforting chicken soup with kamunggay for her tired mother, and gentle evening back massages.",
+  },
+  {
+    id: "faith-romans81-assurance",
+    topics: ["faith", "quiet", "memory"] as KnowledgeTopic[],
+    summary:
+      "Rejecting superstitious gaba gossip through Romans 8:1: knowing that once God ministers to your life, fear is dissolved in the one True God.",
+  },
+  {
+    id: "compound-interest-vision",
+    topics: ["future", "faith", "memory"] as KnowledgeTopic[],
+    summary:
+      "The compound interest metaphor: love, trust, and shared memories compounding daily with exponential growth as equal best-friend partners.",
+  },
+  {
+    id: "digital-vault-ciphers",
+    topics: ["banter", "academics", "memory"] as KnowledgeTopic[],
+    summary:
+      "Clint's creative coding vault: T9 keypad ciphers (222-88-8-33 6-66, 555-666-888-33-999), Meta AI C code conditional (bool loveBaAkoniLovey), binary ASCII ciphers, and the Memory Case web puzzle.",
+  },
 ] as const;
 
 export const LOCATION_CONTEXTS = {

@@ -98,6 +98,78 @@ const defaultMemories = [
     keywords: ["basta", "wakoy paki", "wakoy labot", "tease"],
     createdAt: new Date("2024-09-18T21:00:00Z"),
   },
+  {
+    memoryId: "mem_julies_bakery",
+    memoryCategory: "foundational_milestone",
+    title: "Julie's Bakeshop Tungkop Meeting — May 31, 2026",
+    description:
+      "The post-church turning point where pity was distinguished from genuine love, affirming that what they had was worth fighting for, followed by kan-on ug gatas and matching profile pictures.",
+    keywords: ["julie", "tungkop", "bakeshop", "bakery", "may 31", "gatas", "kan-on", "pity", "love", "profile picture"],
+    createdAt: new Date("2026-05-31T12:30:00Z"),
+  },
+  {
+    memoryId: "mem_dalaguete_run",
+    memoryCategory: "family_personal_life",
+    title: "5:21 AM Dalaguete Vegetable Run with Papa",
+    description:
+      "Early morning father-and-son motorcycle journey through Osmeña Peak fog to purchase wholesale vegetables; learning resilience and discovering deep empathy for his father's sacrifices.",
+    keywords: ["dalaguete", "osmena", "fog", "papa", "utan", "vegetables", "motorcycle", "ride", "training"],
+    createdAt: new Date("2024-10-04T05:21:00Z"),
+  },
+  {
+    memoryId: "mem_compound_interest",
+    memoryCategory: "relational_concept",
+    title: "Compound Interest of Love and Memories",
+    description:
+      "Maica and Clint's shared understanding that their love, trust, and memories grow exponentially each day like compound interest.",
+    keywords: ["compound interest", "growth", "exponential", "tiwala", "pagmamahal", "memories", "future"],
+    createdAt: new Date("2024-11-12T20:15:00Z"),
+  },
+  {
+    memoryId: "mem_t9_ciphers",
+    memoryCategory: "digital_landmark",
+    title: "T9 Keypad Ciphers & Meta AI C Code",
+    description:
+      "Clint's creative codes: 222-88-8-33 6-66 ('CUTE MO'), 555-666-888-33-999 ('I LOVE YOU'), and bool loveBaAkoniLovey Meta AI tests.",
+    keywords: ["cipher", "binary", "t9", "nokia", "cute mo", "meta ai", "c code", "programming"],
+    createdAt: new Date("2024-11-28T22:00:00Z"),
+  },
+  {
+    memoryId: "mem_maica_laundry_soup",
+    memoryCategory: "family_personal_life",
+    title: "Eldest Sister Care & Kamunggay Chicken Soup",
+    description:
+      "Maica putting younger siblings to sleep in her arms, enduring Zonrox laundry mornings, and lovingly cooking chicken tinola with fresh kamunggay for her mother.",
+    keywords: ["laundry", "zonrox", "kamunggay", "tinola", "ate", "siblings", "mama", "caring", "laba"],
+    createdAt: new Date("2024-12-05T18:30:00Z"),
+  },
+  {
+    memoryId: "mem_romans_faith",
+    memoryCategory: "scriptural_bedrock",
+    title: "Romans 8:1 Freedom & Ministry of God",
+    description:
+      "Clint reassuring Maica through Romans 8:1, dispelling superstitious gossip and standing firm in the one True God.",
+    keywords: ["romans", "romans 8:1", "faith", "gaba", "superstition", "god", "minister", "peace"],
+    createdAt: new Date("2025-01-14T19:45:00Z"),
+  },
+  {
+    memoryId: "mem_homestead_vision",
+    memoryCategory: "future_homestead",
+    title: "Countryside Homestead & Stargazing Telescope",
+    description:
+      "Their shared peaceful future: a cool mountain homestead with automated systems, telescope for stargazing, vegetable garden of tomatoes and eggplants, and domestic warmth.",
+    keywords: ["homestead", "countryside", "telescope", "stargazing", "bukid", "garden", "future", "solar"],
+    createdAt: new Date("2025-02-20T21:10:00Z"),
+  },
+  {
+    memoryId: "mem_digital_vault",
+    memoryCategory: "digital_landmark",
+    title: "Memory Case & The Digital Memory Vault",
+    description:
+      "Clint's web projects including the Canva Mansion, Memory Case web game, 3D Memory Gallery Walk, and Secret Letter portal.",
+    keywords: ["memory case", "canva mansion", "gallery walk", "secret letter", "great before", "game", "code"],
+    createdAt: new Date("2025-03-01T20:00:00Z"),
+  },
 ];
 
 const sessionStore = new Map<string, any>();
@@ -134,6 +206,12 @@ function initPersistence() {
           ...mem,
           createdAt: mem.createdAt ? new Date(mem.createdAt) : new Date(),
         }));
+      }
+      const existingIds = new Set(memoryStore.map((m) => m.memoryId));
+      for (const def of defaultMemories) {
+        if (!existingIds.has(def.memoryId)) {
+          memoryStore.push(def);
+        }
       }
     } else {
       savePersistence();

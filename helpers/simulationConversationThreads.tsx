@@ -13,6 +13,8 @@ export type ConversationTopic =
   | "friends"
   | "banter"
   | "faith"
+  | "memory"
+  | "future"
   | "quiet";
 
 export type ConversationThread = {
@@ -98,6 +100,90 @@ export const DAILY_THREADS: ConversationThread[] = [
       { speaker: "clint", text: "Meanwhile ako naa gihapon sa code 😂" },
       { speaker: "maica", text: "Hahaha kabalo ko nimo." },
       { speaker: "clint", text: "Stubborn bug man gud." },
+    ],
+  },
+  {
+    id: "julies-bakery-memory",
+    topic: "memory",
+    minHour: 15,
+    maxHour: 22,
+    cooldownMinutes: 720,
+    turns: [
+      { speaker: "maica", text: "Kahinumdom paka atong sa Julie's Bakeshop sa Tungkop lovey? May 31." },
+      { speaker: "clint", text: "Oo naman, dili jud to makalimtan... atong gi-clarify ang tanan." },
+      { speaker: "maica", text: "Hehe abi jud nako kaluoy ra to sa una." },
+      { speaker: "clint", text: "Wala ois, ikaw jud akong gipili ug barugan. Worth fighting for jud." },
+      { speaker: "maica", text: "Hehe unya nag kan-on ug gatas dayon ta pag-abot." },
+      { speaker: "clint", text: "Hahaha classic, matching profile pics pa gyud." },
+    ],
+  },
+  {
+    id: "dalaguete-ride-memory",
+    topic: "motorcycle",
+    minHour: 5,
+    maxHour: 10,
+    cooldownMinutes: 1440,
+    turns: [
+      { speaker: "clint", text: "Kahinumdom ko atong mga ride namo ni Papa sa Dalaguete palit utan." },
+      { speaker: "maica", text: "Kadlawon kaayo to diba?" },
+      { speaker: "clint", text: "Oo 5 AM gabugnaw ang Osmeña fog. Medyo harsh to sauna pero realizing now, grabe iyang gi-train nako ba." },
+      { speaker: "maica", text: "Kasabot raka sa iyang mga struggles sauna..." },
+      { speaker: "clint", text: "Oo, kay siya ra usa naningkamot. Naka-sabot ra ko." },
+    ],
+  },
+  {
+    id: "compound-interest-vision",
+    topic: "future",
+    minHour: 19,
+    maxHour: 24,
+    cooldownMinutes: 800,
+    turns: [
+      { speaker: "maica", text: "Skl lovey, para tayong compound interest ba." },
+      { speaker: "clint", text: "Unsay compound interest? Hahaha sige explain." },
+      { speaker: "maica", text: "Yung araw-araw nadagdagan, Yung pagmamahal, tiwala, at memories nagpapatubo sa isa't isa..." },
+      { speaker: "clint", text: "Solid ang growth araw-araw... May exponential growth kasi, tas pag ikaw ang kahati, mas dodoble pa." },
+      { speaker: "maica", text: "Hahaha sweet kaayo choy 🤎" },
+    ],
+  },
+  {
+    id: "faith-romans81-thread",
+    topic: "faith",
+    minHour: 18,
+    maxHour: 23,
+    cooldownMinutes: 900,
+    turns: [
+      { speaker: "maica", text: "Naa may silingan nag-istorya ug gaba-gaba ganiha lovey..." },
+      { speaker: "clint", text: "Wala na ois hahah, nonsense na para nako... Kay once na kanang mag minister na gani si God sa imong Life, wala ra ois... I only believe the one and only True God." },
+      { speaker: "maica", text: "Romans 8:1 jud. Salamat lovey kay gina-remind ko nimo permi." },
+      { speaker: "clint", text: "Naa ra ko diri pirmi para nimo." },
+    ],
+  },
+  {
+    id: "digital-ciphers-thread",
+    topic: "banter",
+    minHour: 20,
+    maxHour: 24,
+    cooldownMinutes: 600,
+    turns: [
+      { speaker: "clint", text: "222-88-8-33 6-66" },
+      { speaker: "maica", text: "Unsa na pud na choy? Hahaha T9 keypad na pud?" },
+      { speaker: "clint", text: "I-decode sa keypad sa karaang Nokia hahaha" },
+      { speaker: "maica", text: "C-U-T-E M-O? Hahaha korni nimo pero cute 😂" },
+      { speaker: "clint", text: "At least nakuha nimo hahahaha" },
+    ],
+  },
+  {
+    id: "homestead-future-thread",
+    topic: "future",
+    minHour: 17,
+    maxHour: 23,
+    cooldownMinutes: 1200,
+    turns: [
+      { speaker: "clint", text: "Inig abot sa panahon, atong balay sa bukid bugnaw jud kaayo ang hangin." },
+      { speaker: "maica", text: "Naay garden sa eggplants, tomatoes, ampalaya, unya naa koy ukulele sa balkon." },
+      { speaker: "clint", text: "Naay telescope sa atop para stargazing, unya automated smart solar tanan." },
+      { speaker: "maica", text: "Unya tawgon tika kay luto na ang panihapon hehe" },
+      { speaker: "clint", text: "Mao jud na akong dream, simple pero malinawon." },
     ],
   },
   {

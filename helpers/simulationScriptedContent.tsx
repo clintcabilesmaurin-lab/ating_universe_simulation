@@ -166,6 +166,86 @@ export const SCRIPTED_EVENTS: ScriptedEvent[] = [
       ],
     },
   },
+  {
+    id: "julies_bakery_reminisce",
+    label: "Julie's Bakeshop anniversary",
+    minHour: 16,
+    maxHour: 22,
+    chancePerTick: 0.12,
+    cooldownHours: 36,
+    durationMinutes: 20,
+    opener: "maica",
+    lines: {
+      maica: [
+        "Kahinumdom ko sa Julie's Bakeshop sa Tungkop lovey hehe May 31 jud to",
+        "Atong gistoryahan ang pity vs love... unya nag kan-on ug gatas dayon ta pag-uli 🤍",
+      ],
+      clint: [
+        "Oo naman, di jud to mawala sa huna-huna. Worth fighting for jud ka pirmi.",
+        "Matching profile pics pa gyud dayon ta pagkahuman hahaha.",
+      ],
+    },
+  },
+  {
+    id: "dalaguete_run",
+    label: "Dalaguete morning run",
+    minHour: 5,
+    maxHour: 9,
+    chancePerTick: 0.1,
+    cooldownHours: 48,
+    durationMinutes: 25,
+    opener: "clint",
+    lines: {
+      clint: [
+        "Na-remind ko sa kadlawon nga byahe namo ni Papa sa Dalaguete palit ug mga utan, 5:21 AM grabe ang fog sa Osmeña.",
+        "Harsh man to sauna pero grabe iyang gi-train nako ba, kasabot ra jud ko niya.",
+      ],
+      maica: [
+        "Bless your Papa lovey. Kanang mga training mao nay nagpalig-on nimo ron.",
+        "Mao na proud kaayo ko nimo choy, kabalo jud ka mo-sabot ug barug.",
+      ],
+    },
+  },
+  {
+    id: "compound_interest_chat",
+    label: "Compound interest growth",
+    minHour: 19,
+    maxHour: 23,
+    chancePerTick: 0.12,
+    cooldownHours: 24,
+    durationMinutes: 20,
+    opener: "maica",
+    lines: {
+      maica: [
+        "Para jud tayong compound interest lovey, araw-araw nadagdagan ang tiwala at pagmamahal 🌱",
+        "Ang memories nagpapatubo sa isa't isa, exponential growth ba hehe.",
+      ],
+      clint: [
+        "Solid ang growth araw-araw... tas pag ikaw ang kahati, mas dodoble pa hahahaha.",
+        "Basta nag-unongay ta sa tanan, walay makaguba ana.",
+      ],
+    },
+  },
+  {
+    id: "t9_cipher_chat",
+    label: "T9 keypad code",
+    minHour: 20,
+    maxHour: 24,
+    chancePerTick: 0.15,
+    cooldownHours: 12,
+    durationMinutes: 15,
+    opener: "clint",
+    lines: {
+      clint: [
+        "222-88-8-33 6-66 hahaha decode sa keypad dali!",
+        "O di ba kaha: 555-666-888-33-999... tag-ana unsay meaning ana 🤭",
+      ],
+      maica: [
+        "CUTE MO ug I LOVE YOU na pud na hahahaha korni nimo choy pero sige cute 😂",
+        "Kabalo na jud ko anang imong mga ciphers sukad pa sa una hahaha!",
+      ],
+    },
+  },
 ];
 
 export const RIDDLES: { starter: Speaker; exchange: { speaker: Speaker; text: string }[] }[] = [
@@ -363,6 +443,55 @@ export const KEYWORD_BANKS: { keywords: string[]; lines: Record<Speaker, string[
     lines: {
       clint: ["Nag-practice ko gamay karon.", "Ganahan ko magpatukar usahay, maka-reset."],
       maica: ["A Thousand Years pa gihapon ako hehe.", "Music lang sa ko kadali."],
+    },
+  },
+  {
+    keywords: ["julie", "tungkop", "bakeshop", "may 31", "bakery"],
+    lines: {
+      clint: ["Julie's Bakeshop sa Tungkop... May 31 di jud to malimtan. Ikaw jud akong barugan.", "Kan-on ug gatas dayon ta pagkahuman hahaha."],
+      maica: ["Hehe abi nako sauna kaluoy ra to, pero gi-prove jud nimo. Sweet kaayo to nga adlaw 🤍", "Matching profile pics pa gyud ta dayon hehe."],
+    },
+  },
+  {
+    keywords: ["compound", "interest", "growth"],
+    lines: {
+      clint: ["Solid ang growth araw-araw... May exponential growth kasi, tas pag ikaw ang kahati mas dodoble pa.", "True love compounds every single day."],
+      maica: ["Para jud tayong compound interest! Yung tiwala, pagmamahal, at memories nagpapatubo sa atin 🌱", "Araw-araw nagiging mas matatag hehe."],
+    },
+  },
+  {
+    keywords: ["cipher", "binary", "t9", "01001001", "c code", "meta ai"],
+    lines: {
+      clint: ["bool loveBaAkoniLovey = true; If true: 'Ayy wehhh? Hahahah sure oisssssssss' 😂", "222-88-8-33 6-66 = CUTE MO! Kabalo jud ko di nimo malimtan hahaha."],
+      maica: ["Hahaha kabalo na jud ko anang imong mga ciphers choy!", "01001001... I love you lovey heh. Bisan binary kasabot ko nimo 🤭"],
+    },
+  },
+  {
+    keywords: ["dalaguete", "osmena", "fog", "utan", "vegetable"],
+    lines: {
+      clint: ["5:21 AM sa Osmeña Peak fog uban ni Papa palit utan. Sakripisyo to sauna pero grateful ko sa training.", "Naka-sabot ra ko sa tanang paningkamot ni Papa."],
+      maica: ["Mao nay naghimo nimo nga responsable kaayo karon lovey. Proud ko nimo.", "Grabe ang sakripisyo sauna pero karon lig-on na kaayo ka."],
+    },
+  },
+  {
+    keywords: ["laundry", "zonrox", "kamunggay", "laba", "tinola"],
+    lines: {
+      clint: ["Pahuwaya usa imong kamot mylovey ha, ayaw pugsa. Lami kaayo imong tinola with kamunggay.", "Grabe ka caring ate ug anak jud ka."],
+      maica: ["Kapoy gamay manglaba pero lami kaayo sa paminaw maka-luto para sa pamilya ug masahi ni Mama.", "Basta para sa pamilya unongay jud ta hehe."],
+    },
+  },
+  {
+    keywords: ["romans", "gaba", "superstition", "minister"],
+    lines: {
+      clint: ["Romans 8:1: Wala nay condemnation. Nonsense nang gaba-gaba... Once na mag minister si God sa imong life, I only believe the one True God.", "Ayaw kahadlok sa mga istorya sa uban lovey."],
+      maica: ["Amen lovey. Salamat sa pag-remind permi. Diha ko makakaplag ug kalinaw.", "Romans 8:1 jud. Sa Ginoo ra ta mosalig."],
+    },
+  },
+  {
+    keywords: ["homestead", "telescope", "stargazing", "bukid", "garden"],
+    lines: {
+      clint: ["Atong balay sa bukid puhon... Bugnaw kaayo ang hangin, naay telescope para stargazing, automated tanan.", "Unya ikaw mag-ukulele sa balkon."],
+      maica: ["Unya naay tanom nga eggplants, tomatoes, ampalaya, unya tawgon tika kay luto na panihapon hehe.", "Puhon lovey, simple ug malinawon 🏡"],
     },
   },
 ];
