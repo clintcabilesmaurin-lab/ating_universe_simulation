@@ -1,0 +1,1 @@
+can u build the project through floot mcp, and creeat place holder for me to provide the api ai gemini,

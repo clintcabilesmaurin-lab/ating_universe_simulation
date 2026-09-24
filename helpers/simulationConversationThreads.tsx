@@ -1,0 +1,523 @@
+export type Speaker = "clint" | "maica";
+
+export type ConversationTopic =
+  | "morning"
+  | "school"
+  | "academics"
+  | "leadership"
+  | "family"
+  | "garden"
+  | "music"
+  | "chess"
+  | "motorcycle"
+  | "friends"
+  | "banter"
+  | "faith"
+  | "quiet";
+
+export type ConversationThread = {
+  id: string;
+  minHour: number;
+  maxHour: number;
+  daysOfWeek?: number[];
+  cooldownMinutes: number;
+  topic: ConversationTopic;
+  turns: Array<{ speaker: Speaker; text: string }>;
+};
+
+export const DAILY_THREADS: ConversationThread[] = [
+  {
+    id: "morning-greeting",
+    topic: "morning",
+    minHour: 4.4,
+    maxHour: 7,
+    cooldownMinutes: 720,
+    turns: [
+      { speaker: "maica", text: "Good morning lovey 😊" },
+      { speaker: "clint", text: "Good morning lovey.. 😊" },
+      { speaker: "maica", text: "Nakaon na ka?" },
+      { speaker: "clint", text: "Wa pa gani hahaha, ikaw?" },
+      { speaker: "maica", text: "Nag-andam pa ko diri. Ayaw pud skip ha." },
+      { speaker: "clint", text: "Sige mylabs, ikaw pud kaon dayon." },
+    ],
+  },
+  {
+    id: "morning-skl",
+    topic: "family",
+    minHour: 5,
+    maxHour: 9,
+    cooldownMinutes: 600,
+    turns: [
+      { speaker: "maica", text: "Skl lovey, busy mi gamay diri karon hehe" },
+      { speaker: "clint", text: "Unsay gi-busyhan ninyo?" },
+      { speaker: "maica", text: "Nag-andam sa mga bata, naa pud koy gamay buhaton sa balay." },
+      { speaker: "clint", text: "Ahh okay. Hinay-hinay lang diha ha." },
+      { speaker: "maica", text: "Oo mylabs hehe ikaw sad, ayaw puro buhat." },
+    ],
+  },
+  {
+    id: "school-work",
+    topic: "school",
+    minHour: 8,
+    maxHour: 12,
+    cooldownMinutes: 420,
+    turns: [
+      { speaker: "clint", text: "Naa koy class karon, mag-focus usa ko hahaha" },
+      { speaker: "maica", text: "Sige choy, study well hehe" },
+      { speaker: "clint", text: "Naa pud kay buhaton today?" },
+      { speaker: "maica", text: "Freelance task gamay, then naa pud koy errand sa lungsod." },
+      { speaker: "clint", text: "Busy day diay ta duha." },
+      { speaker: "maica", text: "Mao jud hahaha, survive lang ta." },
+    ],
+  },
+  {
+    id: "lunch-checkin",
+    topic: "family",
+    minHour: 11.5,
+    maxHour: 14,
+    cooldownMinutes: 360,
+    turns: [
+      { speaker: "maica", text: "Ni-kaon naka mylabs?" },
+      { speaker: "clint", text: "Lunch break pa lang. Ikaw?" },
+      { speaker: "maica", text: "Nagkaon na ko hehe" },
+      { speaker: "clint", text: "Maayo. Ayaw pag-skip ug lunch." },
+      { speaker: "maica", text: "Ikaw pud. Basin mag-code ra ka ana hangtod hapon 😂" },
+      { speaker: "clint", text: "Hahaha caught." },
+    ],
+  },
+  {
+    id: "garden-and-code",
+    topic: "garden",
+    minHour: 13,
+    maxHour: 18,
+    cooldownMinutes: 600,
+    turns: [
+      { speaker: "maica", text: "Nag-check ko sa akong garden ron, naa na sad gagmay nga tubo hehe" },
+      { speaker: "clint", text: "Eggplant na? hahaha" },
+      { speaker: "maica", text: "Oo, pati tomatoes. Ganahan jud ko mutan-aw sa mga tanom." },
+      { speaker: "clint", text: "Meanwhile ako naa gihapon sa code 😂" },
+      { speaker: "maica", text: "Hahaha kabalo ko nimo." },
+      { speaker: "clint", text: "Stubborn bug man gud." },
+    ],
+  },
+  {
+    id: "ukulele",
+    topic: "music",
+    minHour: 14,
+    maxHour: 18,
+    cooldownMinutes: 900,
+    turns: [
+      { speaker: "maica", text: "Nag-practice ko ukulele gamay." },
+      { speaker: "clint", text: "A Thousand Years pa gihapon? hahaha" },
+      { speaker: "maica", text: "Oo oy hahaha kabisadohon sa jud nako." },
+      { speaker: "clint", text: "Padayon lang lovey, nice baya na." },
+      { speaker: "maica", text: "Salamat choy 🤭" },
+    ],
+  },
+  {
+    id: "evening-checkin",
+    topic: "family",
+    minHour: 17,
+    maxHour: 21,
+    cooldownMinutes: 420,
+    turns: [
+      { speaker: "maica", text: "Ni-kaon naka mylabs?" },
+      { speaker: "clint", text: "Wala pa. Ikaw?" },
+      { speaker: "maica", text: "Nagtabang pa ko diri sa balay." },
+      { speaker: "clint", text: "Sige, unaha sa imong family." },
+      { speaker: "maica", text: "Mao jud. Message lang ko nimo later hehe." },
+    ],
+  },
+  {
+    id: "church-music",
+    topic: "faith",
+    minHour: 17.5,
+    maxHour: 21,
+    cooldownMinutes: 840,
+    turns: [
+      { speaker: "clint", text: "Naa koy church work later, mag-practice sad ko sa music." },
+      { speaker: "maica", text: "Sige choy, practice well 😊" },
+      { speaker: "clint", text: "Ikaw naa pa kay buhaton sa balay?" },
+      { speaker: "maica", text: "Oo, family duties pa gamay then church work." },
+      { speaker: "clint", text: "Busy gihapon ta hahaha" },
+      { speaker: "maica", text: "Normal day lang lovey 😂" },
+    ],
+  },
+  {
+    id: "late-night-random",
+    topic: "banter",
+    minHour: 21,
+    maxHour: 24,
+    cooldownMinutes: 480,
+    turns: [
+      { speaker: "clint", text: "Naa pa ka?" },
+      { speaker: "maica", text: "Oo, ngano man?" },
+      { speaker: "clint", text: "Wala ra, na-check lang nako hahaha" },
+      { speaker: "maica", text: "Ikaw man gud sige'g disappear." },
+      { speaker: "clint", text: "Nag-code ra ko gamay." },
+      { speaker: "maica", text: "Mao sad na imong 'gamay' 😂" },
+    ],
+  },
+  {
+    id: "bedtime",
+    topic: "quiet",
+    minHour: 22,
+    maxHour: 24,
+    cooldownMinutes: 900,
+    turns: [
+      { speaker: "maica", text: "Matulog na ta?" },
+      { speaker: "clint", text: "Dungan ta sleep my lovey." },
+      { speaker: "maica", text: "Goodnight my loves, sleep well 🤎" },
+      { speaker: "clint", text: "Goodnight lovey. Pray ta before sleep." },
+      { speaker: "maica", text: "Amen. Sleep well choy 🤗" },
+    ],
+  },
+  {
+    id: "saturday-ride",
+    topic: "motorcycle",
+    minHour: 13,
+    maxHour: 18,
+    daysOfWeek: [6],
+    cooldownMinutes: 1440,
+    turns: [
+      { speaker: "clint", text: "Murag nindot mag-ride later hahaha" },
+      { speaker: "maica", text: "Asa man sad ka padulong?" },
+      { speaker: "clint", text: "Basig Naga, Cantao-an, or Man-Made Forest." },
+      { speaker: "maica", text: "Hahaha spontaneous na pud." },
+      { speaker: "clint", text: "Mao na ang plan. Walay plan 😂" },
+      { speaker: "maica", text: "Classic nimo lovey." },
+    ],
+  },
+  {
+    id: "sunday-reset",
+    topic: "faith",
+    minHour: 13,
+    maxHour: 18,
+    daysOfWeek: [0],
+    cooldownMinutes: 1440,
+    turns: [
+      { speaker: "maica", text: "Medyo quiet ra karon hehe." },
+      { speaker: "clint", text: "Sunday reset." },
+      { speaker: "maica", text: "Oo, pahulay gamay after church." },
+      { speaker: "clint", text: "Enjoy lang sa. Ayaw sa daghan buhat." },
+      { speaker: "maica", text: "Sige mylabs 🤎" },
+    ],
+  },
+];
+
+DAILY_THREADS.push(
+  {
+    id: "class-aura",
+    minHour: 8,
+    maxHour: 17,
+    cooldownMinutes: 900,
+    topic: "academics",
+    turns: [
+      { speaker: "clint", text: "Naka-answer ko ganina sa recit hahaha" },
+      { speaker: "maica", text: "Kabalo ko, ikaw lagi mutubag 😭" },
+      { speaker: "clint", text: "Sakto lang gud ang timing hahaha" },
+      { speaker: "maica", text: "Aura farmer man ka." },
+      { speaker: "clint", text: "Ayaw saba hahaha" },
+    ],
+  },
+  {
+    id: "project-laptop",
+    minHour: 8,
+    maxHour: 17,
+    cooldownMinutes: 840,
+    topic: "leadership",
+    turns: [
+      { speaker: "maica", text: "Naa pa tong project nato?" },
+      { speaker: "clint", text: "Oo, ako na lang edit sa laptop." },
+      { speaker: "maica", text: "Sige, ako sa other parts." },
+      { speaker: "clint", text: "Ikaw na bahala ana ha, salig ko nimo." },
+      { speaker: "maica", text: "Okay choy, kita duha mo solve hahaha." },
+    ],
+  },
+  {
+    id: "honor-list",
+    minHour: 10,
+    maxHour: 19,
+    cooldownMinutes: 1440,
+    topic: "academics",
+    turns: [
+      { speaker: "maica", text: "Nakita na nimo ang grades?" },
+      { speaker: "clint", text: "Oo hahaha 93 akong average." },
+      { speaker: "maica", text: "Mao ba? Honor na diay ka 😭" },
+      { speaker: "clint", text: "Abi nako di ko kaabot ani." },
+      { speaker: "maica", text: "Deserve ra nimo, sige man kag effort." },
+    ],
+  },
+  {
+    id: "chess-checkers",
+    minHour: 10,
+    maxHour: 18,
+    cooldownMinutes: 1080,
+    topic: "chess",
+    turns: [
+      { speaker: "clint", text: "Dula ta chess later?" },
+      { speaker: "maica", text: "Ayaw lang ko katawi ha hahaha" },
+      { speaker: "clint", text: "Checkers gani pildi ka pirmi 😂" },
+      { speaker: "maica", text: "Hoyyy! Nagkat-on pa baya ko." },
+      { speaker: "clint", text: "Sige, tudloan tika gamay." },
+    ],
+  },
+  {
+    id: "ride-chance",
+    minHour: 15,
+    maxHour: 20,
+    cooldownMinutes: 1080,
+    topic: "motorcycle",
+    turns: [
+      { speaker: "clint", text: "Murag pauli naka?" },
+      { speaker: "maica", text: "Oo, maglakaw ra unta ko." },
+      { speaker: "clint", text: "Sakto kay agian man nako diha." },
+      { speaker: "maica", text: "Sige, salamat lovey hehe." },
+      { speaker: "clint", text: "Ingat lang, dugay-dugay baya ta wala nagka-sabay." },
+    ],
+  },
+  {
+    id: "school-shy",
+    minHour: 8,
+    maxHour: 17,
+    cooldownMinutes: 1000,
+    topic: "school",
+    turns: [
+      { speaker: "maica", text: "Ngano man ka diri sa school kay murag hilom kaayo?" },
+      { speaker: "clint", text: "Normal ra hahaha." },
+      { speaker: "maica", text: "Sa chat lain man ka." },
+      { speaker: "clint", text: "Ikaw sad gud 😂" },
+      { speaker: "maica", text: "Basta hahaha." },
+    ],
+  },
+  {
+    id: "nickname",
+    minHour: 18,
+    maxHour: 24,
+    cooldownMinutes: 1440,
+    topic: "banter",
+    turns: [
+      { speaker: "clint", text: "Wait, asa nimo nahibaw-an akong nickname?" },
+      { speaker: "maica", text: "Secret 🤭" },
+      { speaker: "clint", text: "Wala gani kabalo si Mark ug Shawn ana hahaha" },
+      { speaker: "maica", text: "Basta kabalo ko 😌" },
+      { speaker: "clint", text: "Suspicious kaayo ka." },
+    ],
+  },
+  {
+    id: "friend-teasing",
+    minHour: 8,
+    maxHour: 22,
+    cooldownMinutes: 720,
+    topic: "friends",
+    turns: [
+      { speaker: "clint", text: "Gi-tease na pud ko nila Mark ug Shawn ganina hahaha" },
+      { speaker: "maica", text: "About unsa napud?" },
+      { speaker: "clint", text: "Kabalo naman ka unsa ilang trip 😂" },
+      { speaker: "maica", text: "Hahaha ayaw lang kabalaka." },
+      { speaker: "clint", text: "Mao lagi, pero grabe sila." },
+    ],
+  },
+  {
+    id: "gullas-guitar",
+    minHour: 16,
+    maxHour: 21,
+    cooldownMinutes: 1440,
+    topic: "music",
+    turns: [
+      { speaker: "maica", text: "Naa pa kay guitar practice?" },
+      { speaker: "clint", text: "Oo, ganahan ko magdala usahay." },
+      { speaker: "maica", text: "Mao to sa Gullas kay nindot kaayo ang place." },
+      { speaker: "clint", text: "Quiet kaayo didto, nice magdugay." },
+      { speaker: "maica", text: "Mao bitaw." },
+    ],
+  },
+  {
+    id: "music-discovery",
+    minHour: 16,
+    maxHour: 22,
+    cooldownMinutes: 2160,
+    topic: "music",
+    turns: [
+      { speaker: "clint", text: "Unsa man, A Thousand Years gihapon?" },
+      { speaker: "maica", text: "Oo hahaha." },
+      { speaker: "clint", text: "Ako pud gani ganahan ko piano lately." },
+      { speaker: "maica", text: "Unsay imong ginapatukar?" },
+      { speaker: "clint", text: "River Flows in You, Canon in D, mga ing-ana." },
+    ],
+  },
+  {
+    id: "recollection-chess",
+    minHour: 12,
+    maxHour: 18,
+    daysOfWeek: [0, 1, 2, 3, 4, 5],
+    cooldownMinutes: 2880,
+    topic: "chess",
+    turns: [
+      { speaker: "clint", text: "Ganahan kaayo ka ganina sa chess ba hahaha" },
+      { speaker: "maica", text: "Kay interesting man gud." },
+      { speaker: "clint", text: "Mao na, tudloan tika sunod pa." },
+      { speaker: "maica", text: "Sige, basin makadaog na ko nimo." },
+      { speaker: "clint", text: "Ato na makita 😂" },
+    ],
+  },
+  {
+    id: "power-bank",
+    minHour: 20,
+    maxHour: 24,
+    cooldownMinutes: 1080,
+    topic: "quiet",
+    turns: [
+      { speaker: "maica", text: "Kapoy na kaayo ko today 😭" },
+      { speaker: "clint", text: "Low battery na pud?" },
+      { speaker: "maica", text: "Murag 1% na hahaha." },
+      { speaker: "clint", text: "Sige, power bank mode sa ko 😂" },
+      { speaker: "maica", text: "Hahaha ikaw jud." },
+    ],
+  },
+  {
+    id: "basta-teasing",
+    minHour: 18,
+    maxHour: 24,
+    cooldownMinutes: 720,
+    topic: "banter",
+    turns: [
+      { speaker: "clint", text: "Basta..." },
+      { speaker: "maica", text: "Basta unsa? 😂" },
+      { speaker: "clint", text: "Wala ra hahaha." },
+      { speaker: "maica", text: "Ayy basta ka jud." },
+      { speaker: "clint", text: "Kabalo naman ka ana." },
+    ],
+  },
+  {
+    id: "narra-listen",
+    minHour: 21,
+    maxHour: 24,
+    cooldownMinutes: 1200,
+    topic: "quiet",
+    turns: [
+      { speaker: "maica", text: "Medyo daghan kog gihuna-huna karon." },
+      { speaker: "clint", text: "NARRA ko diri mylabs." },
+      { speaker: "maica", text: "Hahaha kabalo jud ka unsaon pagpa-smile nako." },
+      { speaker: "clint", text: "Sige lang, storya kung gusto nimo." },
+      { speaker: "maica", text: "Basta naa ka diri okay ra hehe." },
+    ],
+  },
+  {
+    id: "school-to-tease",
+    minHour: 18,
+    maxHour: 22,
+    cooldownMinutes: 840,
+    topic: "school",
+    turns: [
+      { speaker: "clint", text: "Grabe ang school today hahaha." },
+      { speaker: "maica", text: "Kabalo ko, busy kaayo ka ganina." },
+      { speaker: "clint", text: "Naa pa jud sila'g tease sa akong aura farming 😂" },
+      { speaker: "maica", text: "Deserve man pud hahaha." },
+      { speaker: "clint", text: "Ikaw ra gyud akong kalaban." },
+    ],
+  },
+  {
+    id: "faith-checkin",
+    minHour: 21,
+    maxHour: 24,
+    cooldownMinutes: 1440,
+    topic: "faith",
+    turns: [
+      { speaker: "clint", text: "Medyo daghan gihuna-huna today." },
+      { speaker: "maica", text: "Pray lang ta lovey." },
+      { speaker: "clint", text: "Oo. I-commit lang nato tanan sa Ginoo." },
+      { speaker: "maica", text: "Amen. One day at a time lang." },
+      { speaker: "clint", text: "Dungan ta." },
+    ],
+  },
+  {
+    id: "future-home",
+    minHour: 20,
+    maxHour: 24,
+    cooldownMinutes: 4320,
+    topic: "quiet",
+    turns: [
+      { speaker: "maica", text: "Imagine ba naa ta puyo sa bukid someday." },
+      { speaker: "clint", text: "Naa jud na akong automatic home system didto hahaha." },
+      { speaker: "maica", text: "Ako sa garden, ikaw sa imong tech-tech." },
+      { speaker: "clint", text: "Then telescope sa gawas." },
+      { speaker: "maica", text: "Ug dinner ready na sa lamesa hehe." },
+    ],
+  },
+);
+
+export const EVENT_THREADS: Record<string, ConversationThread> = {
+  brownout: {
+    id: "event-brownout",
+    minHour: 18,
+    maxHour: 24,
+    cooldownMinutes: 1200,
+    topic: "quiet",
+    turns: [
+      { speaker: "maica", text: "Brownout na sad lovey hehe" },
+      { speaker: "clint", text: "Batia ois hahah, pag-abot nako sa pultahan, na-brownout ois" },
+      { speaker: "maica", text: "Init kaayo ani, wala jud koy fan karon 😭" },
+      { speaker: "clint", text: "Alimuot no? Candle lang sa ta hahaha" },
+      { speaker: "maica", text: "Lagi. Maglingkod² lang sa ko diri." },
+      { speaker: "clint", text: "Sige. Tan-aw lang sa bituon habang wala kuryente." },
+    ],
+  },
+  water_shortage: {
+    id: "event-water-shortage",
+    minHour: 5,
+    maxHour: 9,
+    cooldownMinutes: 4320,
+    topic: "motorcycle",
+    turns: [
+      { speaker: "clint", text: "Mag-sag-ob diay mi ron lovey, pila na ka adlaw walay agas diri 😅" },
+      { speaker: "maica", text: "Alaot kaayo. Ayaw lang paghago kaayo ha." },
+      { speaker: "clint", text: "Mangita mi ug puso sa Camarin." },
+      { speaker: "maica", text: "Sige, careful lang mo diha." },
+      { speaker: "clint", text: "Oo mylabs." },
+    ],
+  },
+  videoke_night: {
+    id: "event-videoke",
+    minHour: 20,
+    maxHour: 24,
+    daysOfWeek: [6],
+    cooldownMinutes: 1440,
+    topic: "friends",
+    turns: [
+      { speaker: "clint", text: "Nagvideoke na sad si Papa hahaha" },
+      { speaker: "maica", text: "Brokenhearted na sad songs? 😂" },
+      { speaker: "clint", text: "Exactly hahaha para siyag naay lovelife problem." },
+      { speaker: "maica", text: "Hahaha sabayi na lang siya sa background." },
+      { speaker: "clint", text: "Ayaw nalang, masakit sa dunggan 😂" },
+    ],
+  },
+  nanay_lights: {
+    id: "event-nanay",
+    minHour: 19,
+    maxHour: 22,
+    cooldownMinutes: 1200,
+    topic: "family",
+    turns: [
+      { speaker: "maica", text: "Gi-sindihan sad ko ni Nanay sa suga hehe" },
+      { speaker: "clint", text: "Nangutana na pud unsa imong gibasa?" },
+      { speaker: "maica", text: "Oo hahaha, naa na pud siya'y old stories." },
+      { speaker: "clint", text: "Paminaw lang sa iya lovey." },
+      { speaker: "maica", text: "Mao pud akong buhaton. Cute bitaw siya." },
+    ],
+  },
+  unsent_message: {
+    id: "event-unsent",
+    minHour: 21,
+    maxHour: 24,
+    cooldownMinutes: 480,
+    topic: "banter",
+    turns: [
+      { speaker: "clint", text: "Ay sori na-unsend hahaha" },
+      { speaker: "maica", text: "Sa unsa nga paagi na-pindot mo? Haha give me valid reason." },
+      { speaker: "clint", text: "Napindot lang, madulas akong kamay hahahahaha" },
+      { speaker: "maica", text: "Suspicious ka ana ha 😂" },
+      { speaker: "clint", text: "Wala jud to. Promise hahaha" },
+    ],
+  },
+};
