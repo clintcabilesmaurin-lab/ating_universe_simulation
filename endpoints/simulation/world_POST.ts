@@ -15,7 +15,7 @@ export async function handle(request: Request): Promise<Response> {
         ? "Walking into Music World"
         : "Settling into the Living Room";
 
-    const updated = await db.updateTable("simulationSessions")
+    let updated = await db.updateTable("simulationSessions")
       .set({
         world: input.world,
         currentActivity,
@@ -26,7 +26,15 @@ export async function handle(request: Request): Promise<Response> {
       .executeTakeFirst();
 
     if (!updated) {
-      return new Response(superjson.stringify({ error: "Simulation session not found." }), { status: 404 });
+      const created = await db.insertInto("simulationSessions").values({
+        sessionId: input.sessionId,
+        world: input.world,
+        clintMood: "reflective",
+        maicaMood: "warm",
+        currentActivity,
+        activeMusic: null,
+      }).returningAll().executeTakeFirstOrThrow();
+      updated = { sessionId: created.sessionId, world: created.world };
     }
 
     const output: OutputType = {

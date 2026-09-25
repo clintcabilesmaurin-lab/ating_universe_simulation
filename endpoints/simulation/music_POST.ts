@@ -17,13 +17,20 @@ export async function handle(request: Request): Promise<Response> {
       return new Response(superjson.stringify({ error: "Music track not found." }), { status: 404 });
     }
 
-    const session = await db.selectFrom("simulationSessions")
+    let session = await db.selectFrom("simulationSessions")
       .select(["sessionId"])
       .where("sessionId", "=", input.sessionId)
       .executeTakeFirst();
 
     if (!session) {
-      return new Response(superjson.stringify({ error: "Simulation session not found." }), { status: 404 });
+      session = await db.insertInto("simulationSessions").values({
+        sessionId: input.sessionId,
+        world: "music-room",
+        clintMood: "reflective",
+        maicaMood: "warm",
+        currentActivity: "Listening to " + track.title,
+        activeMusic: track.id,
+      }).returningAll().executeTakeFirstOrThrow();
     }
 
     const currentActivity = "Listening to " + track.title;

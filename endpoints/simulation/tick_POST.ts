@@ -12,9 +12,18 @@ export async function handle(request: Request): Promise<Response> {
     const input = superjson.parse<InputType>(await request.text());
     if (!input.sessionId) return new Response(superjson.stringify({ error: "sessionId is required." }), { status: 400 });
 
-    const session = await db.selectFrom("simulationSessions").selectAll()
+    let session = await db.selectFrom("simulationSessions").selectAll()
       .where("sessionId", "=", input.sessionId).executeTakeFirst();
-    if (!session) return new Response(superjson.stringify({ error: "Simulation session not found." }), { status: 404 });
+    if (!session) {
+      session = await db.insertInto("simulationSessions").values({
+        sessionId: input.sessionId,
+        world: "living-room",
+        clintMood: "reflective",
+        maicaMood: "warm",
+        currentActivity: "sitting together",
+        activeMusic: null,
+      }).returningAll().executeTakeFirstOrThrow();
+    }
 
     const history = await db.selectFrom("simulationMessages").selectAll()
       .where("sessionId", "=", input.sessionId).orderBy("createdAt", "desc").limit(1).execute();

@@ -14,11 +14,23 @@ export const postRealtimeToken = async (
   init?: RequestInit,
 ): Promise<OutputType> => {
   const validatedInput = schema.parse(body);
-  const result = await fetch(`/_api/_realtime/token`, {
-    method: "POST",
-    body: superjson.stringify(validatedInput),
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
-  return superjson.parse<OutputType>(await result.text());
+  try {
+    const result = await fetch(`/_api/_realtime/token`, {
+      method: "POST",
+      body: superjson.stringify(validatedInput),
+      ...init,
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    });
+    if (result.ok) {
+      const text = await result.text();
+      if (
+        !text.trim().startsWith("<!DOCTYPE") &&
+        !text.trim().startsWith("<html")
+      ) {
+        return superjson.parse<OutputType>(text);
+      }
+    }
+  } catch {}
+
+  return { error: "Realtime WebSocket server unavailable on current deployment host" };
 };

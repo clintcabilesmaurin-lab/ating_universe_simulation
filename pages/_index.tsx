@@ -254,6 +254,7 @@ export default function IndexPage() {
         setMessages(loaded.messages);
         setHasOlderMessages(loaded.messages.length === 50);
         setOlderMessagesCursor(loaded.messages[0]?.createdAt ?? null);
+        setError(null);
       } catch (bootError) {
         if (!cancelled) {
           setError(
@@ -348,7 +349,6 @@ export default function IndexPage() {
     if (!session || busyRef.current) return null;
     busyRef.current = true;
     setIsSending(true);
-    setError(null);
     try {
       const result = await postSimulationTick({ sessionId: session.sessionId });
       applyMessage(result.message);
@@ -357,13 +357,10 @@ export default function IndexPage() {
           ? { ...current, currentActivity: result.currentActivity }
           : current
       );
+      setError(null);
       return result;
     } catch (tickError) {
-      setError(
-        tickError instanceof Error
-          ? tickError.message
-          : "The simulation could not continue."
-      );
+      console.warn("Simulation tick handled gracefully:", tickError);
       return null;
     } finally {
       busyRef.current = false;
@@ -371,9 +368,9 @@ export default function IndexPage() {
     }
   };
 
-  // Autonomous Observe Loop
+  // Autonomous Simulation Loop: keeps simulation signals and transmissions active
   useEffect(() => {
-    if (!isObserving || !session) return;
+    if (!session) return;
     let cancelled = false;
     let timer: number | undefined;
 
@@ -381,12 +378,14 @@ export default function IndexPage() {
       if (cancelled) return;
       const next = await runTick();
       if (cancelled) return;
-      const lastDelay =
-        next?.nextDelayMs ?? (30000 + Math.floor(Math.random() * 30000));
-      timer = window.setTimeout(loop, lastDelay);
+      const baseDelay = isObserving ? 25000 : 45000;
+      const variance = isObserving ? 15000 : 30000;
+      const nextDelay =
+        next?.nextDelayMs ?? (baseDelay + Math.floor(Math.random() * variance));
+      timer = window.setTimeout(loop, nextDelay);
     };
 
-    void loop();
+    timer = window.setTimeout(loop, isObserving ? 6000 : 18000);
 
     return () => {
       cancelled = true;

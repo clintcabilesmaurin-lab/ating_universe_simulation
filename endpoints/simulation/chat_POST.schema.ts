@@ -1,5 +1,6 @@
 import { z } from "zod";
 import superjson from "superjson";
+import { sendClientSimulationChat } from "../../helpers/clientSimulationEngine";
 
 export const chatSchema = z.object({
   speaker: z.enum(["clint", "maica"]),
@@ -25,17 +26,40 @@ export type ChatResponse = z.infer<typeof chatResponseSchema>;
 
 export async function postSimulationChat(input: ChatInput): Promise<ChatResponse> {
   const validatedInput = chatSchema.parse(input);
-  const response = await fetch("/_api/simulation/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: superjson.stringify(validatedInput),
-  });
-  const data: unknown = await response.text().then((text) => superjson.parse<unknown>(text)).catch(() => ({ configured: true, message: "Invalid server response." }));
-  if (!response.ok) {
-    const message = typeof data === "object" && data !== null && "error" in data
-      ? String((data as { error?: unknown }).error ?? "Simulation request failed.")
-      : "Simulation request failed.";
-    throw new Error(message);
+  try {
+    const response = await fetch("/_api/simulation/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: superjson.stringify(validatedInput),
+    });
+    if (response.ok) {
+      const text = await response.text();
+      if (
+        !text.trim().startsWith("<!DOCTYPE") &&
+        !text.trim().startsWith("<html")
+      ) {
+        const data: unknown = superjson.parse<unknown>(text);
+        return chatResponseSchema.parse(data);
+      }
+    }
+  } catch (err) {
+    console.warn("Backend chat API unavailable, running client simulation reply:", err);
   }
-  return chatResponseSchema.parse(data);
+
+  const result = sendClientSimulationChat({
+    sessionId: input.sessionId || "sim_local",
+    speaker: input.speaker,
+    message: input.message,
+    world: input.world,
+  });
+
+  return {
+    configured: true,
+    sessionId: input.sessionId || "sim_local",
+    userMessageId: result.userMessageId,
+    responseMessageId: result.responseMessageId,
+    message: result.message,
+    speaker: result.speaker,
+    interactionId: result.interactionId,
+  };
 }

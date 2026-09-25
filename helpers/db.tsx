@@ -3,9 +3,16 @@ import path from "node:path";
 import { type Kysely } from "kysely";
 import { DB } from "./schema";
 
-// Local persistent database store. No external database or connection strings required.
-const DATA_DIR = path.resolve(process.cwd(), "data");
-const DB_FILE = path.join(DATA_DIR, "simulation_store.json");
+// Local persistent database store. Safe for local, Docker, and Vercel serverless environments.
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+const ROOT_DATA_DIR = path.resolve(process.cwd(), "data");
+const ROOT_DB_FILE = path.join(ROOT_DATA_DIR, "simulation_store.json");
+const DATA_DIR = isServerless ? path.join("/tmp", "data") : ROOT_DATA_DIR;
+const DB_FILE = isServerless ? path.join("/tmp", "data", "simulation_store.json") : ROOT_DB_FILE;
 
 const defaultMemories = [
   {
@@ -178,12 +185,22 @@ let memoryStore: any[] = [...defaultMemories];
 
 function initPersistence() {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+    } catch {
+      // In-memory mode if directory creation is restricted
     }
 
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, "utf-8");
+    const fileToLoad = fs.existsSync(DB_FILE)
+      ? DB_FILE
+      : fs.existsSync(ROOT_DB_FILE)
+      ? ROOT_DB_FILE
+      : null;
+
+    if (fileToLoad) {
+      const raw = fs.readFileSync(fileToLoad, "utf-8");
       const data = JSON.parse(raw);
       if (data.sessions && typeof data.sessions === "object") {
         for (const [k, v] of Object.entries(data.sessions as Record<string, any>)) {
@@ -236,7 +253,8 @@ function savePersistence() {
       };
       fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
     } catch (err) {
-      console.error("Error writing to persistent store:", err);
+      // In-memory fallback if filesystem is read-only (e.g. Vercel)
+      console.warn("Running in-memory persistence (disk write unavailable):", err);
     }
   }, 40);
 }

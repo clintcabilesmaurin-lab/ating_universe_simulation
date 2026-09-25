@@ -850,26 +850,6 @@ This one feels more local and personal. Murag less polished in an international-
 It feels sincere. Kanang simple nga “para nimo ni” feeling. Very Filipino love-song heart. 🤍`,
   },
   {
-    id: 'track-emo-fall-for-you',
-    youtubeId: 'pZ12_E5R3qc',
-    fallbackYoutubeIds: ['L-R_3y8y7k4', 'rR1c51q8eQo'],
-    coverImage: 'https://img.youtube.com/vi/pZ12_E5R3qc/hqdefault.jpg',
-    title: 'Fall For You',
-    artist: 'Secondhand Serenade',
-    tags: ['emo', 'acoustic-rock', 'alt-rock', 'nostalgic', '2000s-emo', 'ballad'],
-    roomIds: ['emo', 'listening-lounge'],
-    genre: 'emo',
-    year: 2008,
-    isFeatured: true,
-    addedAt: '2026-02-05T00:00:00Z',
-    metadataSource: 'youtube',
-    description: `**Clint:**
-“Because a girl like you is impossible to find... you're impossible to find.” The definitive acoustic emo anthem of the 2000s. Raw vocals, earnest guitar strums, and pure devotion.
-
-**Maica:**
-Grabe ka classic! Ang chorus pa lang makabalik dayon sa high school days. Kanang earnest acoustic singing nga gikan gyud sa kinahiladman sa kasingkasing. 🖤`,
-  },
-  {
     id: 'track-027',
     youtubeId: 'PeZ-rJqTwkw',
     coverImage: 'https://img.youtube.com/vi/PeZ-rJqTwkw/hqdefault.jpg',

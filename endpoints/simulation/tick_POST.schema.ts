@@ -1,4 +1,5 @@
 import superjson from "superjson";
+import { runClientSimulationTick } from "../../helpers/clientSimulationEngine";
 
 export type InputType = {
   sessionId: string;
@@ -21,14 +22,31 @@ export type OutputType = {
 };
 
 export const postSimulationTick = async (input: InputType): Promise<OutputType> => {
-  const result = await fetch("/_api/simulation/tick", {
-    method: "POST",
-    body: superjson.stringify(input),
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!result.ok) {
-    const errorText = await result.text();
-    throw new Error(superjson.parse<{ error: string }>(errorText).error);
+  try {
+    const result = await fetch("/_api/simulation/tick", {
+      method: "POST",
+      body: superjson.stringify(input),
+      headers: { "Content-Type": "application/json" },
+    });
+    if (result.ok) {
+      const text = await result.text();
+      if (
+        !text.trim().startsWith("<!DOCTYPE") &&
+        !text.trim().startsWith("<html")
+      ) {
+        return superjson.parse<OutputType>(text);
+      }
+    }
+  } catch (err) {
+    console.warn("Backend tick API unavailable, running client simulation tick:", err);
   }
-  return superjson.parse<OutputType>(await result.text());
+
+  const clientTick = runClientSimulationTick(input.sessionId, input.speaker);
+  return {
+    sessionId: input.sessionId,
+    message: clientTick.message,
+    world: "living-room",
+    currentActivity: clientTick.currentActivity,
+    nextDelayMs: clientTick.nextDelayMs,
+  };
 };

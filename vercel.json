@@ -1,0 +1,26 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/_api/(.*)",
+      "destination": "/api/index?route=$1"
+    },
+    {
+      "source": "/_api/:match*",
+      "destination": "/api/index?route=:match*"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index?route=$1"
+    },
+    {
+      "source": "/api/:match*",
+      "destination": "/api/index?route=:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
