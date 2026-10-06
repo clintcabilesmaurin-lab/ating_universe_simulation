@@ -1,32 +1,34 @@
 import superjson from "superjson";
-import {
-  getOrCreateClientSession,
-  type ClientSessionOutput,
-} from "../../helpers/clientSimulationEngine";
+import type { SimulationSpeaker } from "../../helpers/schema";
 
-export type OutputType = ClientSessionOutput;
+export type MessageItem = {
+  messageId: string;
+  speaker: SimulationSpeaker;
+  text: string;
+  source: string;
+  interactionId: string | null;
+  createdAt: string;
+};
+
+export type OutputType = {
+  sessionId: string;
+  world: string;
+  clintMood: string;
+  maicaMood: string;
+  currentActivity: string;
+  activeMusic: string | null;
+  messages: MessageItem[];
+};
 
 export const postSimulationSession = async (): Promise<OutputType> => {
-  try {
-    const result = await fetch("/_api/simulation/session", {
-      method: "POST",
-      body: superjson.stringify({}),
-      headers: { "Content-Type": "application/json" },
-    });
-    if (result.ok) {
-      const text = await result.text();
-      // Ensure it's not an HTML 404 page from SPA fallback
-      if (
-        !text.trim().startsWith("<!DOCTYPE") &&
-        !text.trim().startsWith("<html")
-      ) {
-        return superjson.parse<OutputType>(text);
-      }
-    }
-  } catch (err) {
-    console.warn("Backend session API unavailable, running client simulation:", err);
+  const result = await fetch("/_api/simulation/session", {
+    method: "POST",
+    body: superjson.stringify({}),
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!result.ok) {
+    throw new Error(`Failed to initialize session: ${result.statusText}`);
   }
-
-  // Gracefully initialize client-side simulation observatory
-  return getOrCreateClientSession();
+  const text = await result.text();
+  return superjson.parse<OutputType>(text);
 };

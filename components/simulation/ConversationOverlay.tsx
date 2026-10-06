@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Radio } from "lucide-react";
-import type { Speaker } from "../../helpers/simulationConversationThreads";
+import type { Speaker } from "../../helpers/schema";
 import { animateMessageEntrance } from "../animation/animeMotion";
 
 export type SimulationMessage = {

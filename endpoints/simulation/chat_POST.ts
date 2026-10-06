@@ -2,9 +2,6 @@ import superjson from "superjson";
 import { nanoid } from "nanoid";
 import { publish } from "@floot/realtime";
 import { db } from "../../helpers/db";
-import { simulationScriptedChatReply } from "../../helpers/simulationScriptedTurn";
-import { simulationMemoryRetriever } from "../../helpers/simulationMemoryRetriever";
-import { generateGeminiChatReply, isGeminiActive } from "../../helpers/geminiSimulation";
 import { chatSchema } from "./chat_POST.schema";
 
 export async function handle(request: Request): Promise<Response> {
@@ -16,11 +13,11 @@ export async function handle(request: Request): Promise<Response> {
 
   try {
     const parsed = chatSchema.safeParse(superjson.parse(await request.text()));
-    if (!parsed.success) return json({ error: "Invalid simulation payload." }, 400);
+    if (!parsed.success) return json({ error: "Invalid transmission payload." }, 400);
 
     let session = parsed.data.sessionId
       ? await db.sessions.get(parsed.data.sessionId)
-      : null;
+      : await db.sessions.getLatest();
 
     if (!session) {
       session = await db.sessions.create({
@@ -28,17 +25,17 @@ export async function handle(request: Request): Promise<Response> {
         world: parsed.data.world,
         clintMood: "reflective",
         maicaMood: "warm",
-        currentActivity: "listening",
+        currentActivity: "Observatory active",
         activeMusic: null,
       });
     }
 
-    const userMessageId = "msg_" + nanoid(16);
-    const responseMessageId = "msg_" + nanoid(16);
+    const messageId = "msg_" + nanoid(16);
     const now = new Date();
 
+    // Persist user transmission to Supabase
     await db.messages.insert({
-      messageId: userMessageId,
+      messageId,
       sessionId: session.sessionId,
       speaker: parsed.data.speaker,
       text: parsed.data.message,
@@ -47,93 +44,44 @@ export async function handle(request: Request): Promise<Response> {
       createdAt: now,
     });
 
-    let replyText: string | null = null;
-    let interactionId = "scripted_" + nanoid(10);
-    let source = "simulation";
-
-    if (isGeminiActive()) {
-      try {
-        const memories = await simulationMemoryRetriever(parsed.data.message, 3);
-        const history = await db.messages.list({
-          sessionId: session.sessionId,
-          limit: 6,
-        });
-
-        replyText = await generateGeminiChatReply({
-          speaker: parsed.data.speaker,
-          message: parsed.data.message,
-          world: session.world,
-          currentActivity: session.currentActivity,
-          retrievedMemories: memories.map((m) => ({ title: m.title, description: m.description })),
-          recentHistory: history.reverse().map((h) => ({ speaker: h.speaker, text: h.text })),
-        });
-
-        if (replyText) {
-          interactionId = "gemini_" + nanoid(10);
-          source = "gemini";
-        }
-      } catch {
-        // AI reply unavailable, seamlessly proceed with scripted dialogue
-      }
-    }
-
-    if (!replyText) {
-      replyText = await simulationScriptedChatReply({
-        speaker: parsed.data.speaker,
-        message: parsed.data.message,
-        now,
-      });
-    }
-
-    const aiNow = new Date();
-    await db.messages.insert({
-      messageId: responseMessageId,
-      sessionId: session.sessionId,
-      speaker: parsed.data.speaker,
-      text: replyText,
-      source,
-      interactionId,
-      createdAt: aiNow,
-    });
-
     const nextActivity =
-      (parsed.data.speaker === "clint" ? "Clint" : "Maica") +
-      " is speaking";
+      (parsed.data.speaker === "clint" ? "Clint" : "Maica") + " transmitted a message";
 
     await db.sessions.update(session.sessionId, {
-      updatedAt: aiNow,
+      updatedAt: now,
       currentActivity: nextActivity,
-      ...(parsed.data.speaker === "clint"
-        ? { clintInteractionId: interactionId }
-        : { maicaInteractionId: interactionId }),
     });
 
-    const output = {
-      configured: true,
+    const createdMessage = {
+      messageId,
       sessionId: session.sessionId,
-      userMessageId,
-      responseMessageId,
-      message: replyText,
       speaker: parsed.data.speaker,
-      interactionId,
+      text: parsed.data.message,
+      source: "user",
+      interactionId: null,
+      createdAt: now.toISOString(),
     };
 
+    // Broadcast over realtime so observatory clients update
     await publish("simulation:main", {
-      type: "simulation.chat",
-      ...output,
+      type: "simulation.message",
+      sessionId: session.sessionId,
+      message: createdMessage,
+      currentActivity: nextActivity,
     });
 
-    return json(output);
+    return json({
+      success: true,
+      sessionId: session.sessionId,
+      message: createdMessage,
+    });
   } catch (error) {
-    console.error(
-      "Simulation chat failed",
-      error instanceof Error ? error.message : String(error)
-    );
+    console.error("Transmission persistence failed:", error);
     return json(
       {
-        error: error instanceof Error ? error.message : "Simulation chat failed.",
+        error: error instanceof Error ? error.message : "Transmission persistence failed.",
       },
-      502
+      500
     );
   }
 }

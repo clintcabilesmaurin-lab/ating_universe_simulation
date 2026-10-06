@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import superjson from "superjson";
-import { Activity, X, Radio } from "lucide-react";
+import { Activity, X } from "lucide-react";
 import { StarfieldCanvas } from "../components/StarfieldCanvas";
 import { SimulationWorld } from "../components/simulation/SimulationWorld";
 import { KineticOverlay } from "../components/simulation/KineticOverlay";
@@ -22,25 +21,18 @@ import {
 } from "../helpers/simulationDayCycle";
 import { musicLibrary } from "../helpers/musicLibrary";
 import { useYouTubePlayer } from "../helpers/useYouTubePlayer";
-import type { Speaker } from "../helpers/simulationConversationThreads";
-import {
-  getOrCreateClientSession,
-  runClientSimulationTick,
-  sendClientSimulationChat,
-} from "../helpers/clientSimulationEngine";
+import type { Speaker } from "../helpers/schema";
 import {
   postSimulationSession,
   type OutputType as SessionOutput,
 } from "../endpoints/simulation/session_POST.schema";
 import { getSimulationSession } from "../endpoints/simulation/session_GET.schema";
-import { postSimulationTick } from "../endpoints/simulation/tick_POST.schema";
 import { postSimulationChat } from "../endpoints/simulation/chat_POST.schema";
 import { postSimulationWorld } from "../endpoints/simulation/world_POST.schema";
 import { postSimulationMusic } from "../endpoints/simulation/music_POST.schema";
 import { getSimulationMessages } from "../endpoints/simulation/messages_GET.schema";
 import styles from "./_index.module.css";
 
-const SIMULATION_SESSION_VERSION = "v3";
 type Message = SessionOutput["messages"][number];
 
 export default function IndexPage() {
@@ -60,71 +52,17 @@ export default function IndexPage() {
   );
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [playbackNotice, setPlaybackNotice] = useState<string | null>(null);
-  const [engineStatus, setEngineStatus] = useState<{
-    geminiConfigured: boolean;
-    model: string;
-    mode?: "ai" | "scripted";
-  } | null>(null);
   const [isConversationCollapsed, setIsConversationCollapsed] = useState(false);
   const [isMusicDrawerOpen, setIsMusicDrawerOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
   const busyRef = useRef(false);
-  const isTickBusyRef = useRef(false);
   const realtimeStatus = useRealtimeConnectionStatus();
   const youtubePlayer = useYouTubePlayer();
   const fallbackAttemptRef = useRef<{ trackId: string; index: number } | null>(
     null
   );
   const hydratePlayerRef = useRef(true);
-
-  // Fetch AI engine status
-  useEffect(() => {
-    fetch("/_api/simulation/engine-status")
-      .then((res) => res.text())
-      .then((text) => {
-        try {
-          const parsed = superjson.parse<{
-            geminiConfigured: boolean;
-            model: string;
-            mode?: "ai" | "scripted";
-          }>(text);
-          setEngineStatus(parsed);
-        } catch {}
-      })
-      .catch(() => {});
-  }, []);
-
-  const toggleEngineMode = async () => {
-    const isCurrentlyAi = engineStatus?.geminiConfigured ?? true;
-    const nextMode: "ai" | "scripted" = isCurrentlyAi ? "scripted" : "ai";
-
-    // Optimistic UI update
-    setEngineStatus((prev) => ({
-      geminiConfigured: nextMode === "ai",
-      model: "AI",
-      mode: nextMode,
-    }));
-
-    try {
-      const res = await fetch("/_api/simulation/engine-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: superjson.stringify({ mode: nextMode }),
-      });
-      if (res.ok) {
-        const text = await res.text();
-        const parsed = superjson.parse<{
-          geminiConfigured: boolean;
-          model: string;
-          mode?: "ai" | "scripted";
-        }>(text);
-        setEngineStatus(parsed);
-      }
-    } catch (err) {
-      console.warn("Failed to toggle engine mode:", err);
-    }
-  };
 
   // Hydrate music player once session is ready
   useEffect(() => {
@@ -154,16 +92,6 @@ export default function IndexPage() {
         sessionId: session.sessionId,
         trackId,
       });
-      result.messages.forEach((message) =>
-        applyMessage({
-          messageId: message.messageId,
-          speaker: message.speaker,
-          text: message.text,
-          source: "simulation",
-          interactionId: message.interactionId,
-          createdAt: message.createdAt,
-        })
-      );
       setSession((current) =>
         current
           ? {
@@ -261,49 +189,19 @@ export default function IndexPage() {
     }
   };
 
-  // Boot simulation session
+  // Boot canonical simulation session from Supabase
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
       try {
-        let storedId: string | null = null;
-        try {
-          const storedVersion = window.localStorage.getItem(
-            "simulation-session-version"
-          );
-          if (storedVersion === SIMULATION_SESSION_VERSION) {
-            storedId = window.localStorage.getItem("simulation-session-id");
-          }
-        } catch {}
-
         let loaded: SessionOutput | null = null;
-        if (storedId) {
-          try {
-            loaded = await getSimulationSession(storedId, 50);
-          } catch {
-            try {
-              loaded = await postSimulationSession();
-            } catch {}
-          }
-        } else {
-          try {
-            loaded = await postSimulationSession();
-          } catch {}
-        }
-
-        if (!loaded || !loaded.sessionId) {
-          loaded = getOrCreateClientSession(storedId);
+        try {
+          loaded = await getSimulationSession();
+        } catch {
+          loaded = await postSimulationSession();
         }
 
         if (cancelled) return;
-        try {
-          window.localStorage.setItem("simulation-session-id", loaded.sessionId);
-          window.localStorage.setItem(
-            "simulation-session-version",
-            SIMULATION_SESSION_VERSION
-          );
-        } catch {}
-
         setSession(loaded);
         setMessages(loaded.messages || []);
         setHasOlderMessages((loaded.messages || []).length === 50);
@@ -311,11 +209,11 @@ export default function IndexPage() {
         setError(null);
       } catch (bootError) {
         if (!cancelled) {
-          console.warn("Boot encountered error, using local fallback:", bootError);
-          const fallback = getOrCreateClientSession();
-          setSession(fallback);
-          setMessages(fallback.messages || []);
-          setError(null);
+          setError(
+            bootError instanceof Error
+              ? bootError.message
+              : "DATABASE OFFLINE: Unable to connect to Supabase session."
+          );
         }
       }
     };
@@ -325,7 +223,7 @@ export default function IndexPage() {
     };
   }, []);
 
-  // Day cycle ticker
+  // Day cycle ticker for visual astronomical clock
   useEffect(() => {
     const update = () => setDayCycle(getSimulationDayCycle());
     update();
@@ -333,7 +231,7 @@ export default function IndexPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Realtime subscription
+  // Realtime subscription (listens for world/audio/message events)
   useRealtimeChannel(channels.simulation("main"), (event: any) => {
     if (!session || event?.sessionId !== session.sessionId) return;
     if (event.type === "simulation.world") {
@@ -358,12 +256,6 @@ export default function IndexPage() {
       return;
     }
     if (event.type === "simulation.music") {
-      event.messages?.forEach((message: Message) =>
-        applyMessage({
-          ...message,
-          source: "simulation",
-        })
-      );
       setSession((current) =>
         current
           ? {
@@ -383,86 +275,9 @@ export default function IndexPage() {
       }
       return;
     }
-    if (event.type === "simulation.chat") {
-      setSession((current) =>
-        current
-          ? {
-              ...current,
-              currentActivity:
-                event.speaker === "clint"
-                  ? "Clint is speaking"
-                  : "Maica is speaking",
-            }
-          : current
-      );
-    }
   });
 
-  // Tick generator
-  const runTick = async () => {
-    if (!session || isTickBusyRef.current) return null;
-    isTickBusyRef.current = true;
-    try {
-      const result = await postSimulationTick({ sessionId: session.sessionId });
-      applyMessage(result.message);
-      setSession((current) =>
-        current
-          ? { ...current, currentActivity: result.currentActivity }
-          : current
-      );
-      setError(null);
-      return result;
-    } catch (tickError) {
-      console.warn("Simulation tick handled via local engine:", tickError);
-      try {
-        const clientTick = runClientSimulationTick(session.sessionId);
-        applyMessage(clientTick.message);
-        setSession((current) =>
-          current
-            ? { ...current, currentActivity: clientTick.currentActivity }
-            : current
-        );
-        return {
-          sessionId: session.sessionId,
-          message: clientTick.message,
-          world: session.world,
-          currentActivity: clientTick.currentActivity,
-          nextDelayMs: clientTick.nextDelayMs,
-        };
-      } catch {
-        return null;
-      }
-    } finally {
-      isTickBusyRef.current = false;
-    }
-  };
-
-  // Autonomous Simulation Loop: keeps simulation signals and transmissions active
-  useEffect(() => {
-    if (!session) return;
-    let cancelled = false;
-    let timer: number | undefined;
-
-    const loop = async () => {
-      if (cancelled) return;
-      const next = await runTick();
-      if (cancelled) return;
-      const baseDelay = isObserving ? 25000 : 45000;
-      const variance = isObserving ? 15000 : 30000;
-      const nextDelay =
-        next?.nextDelayMs ?? (baseDelay + Math.floor(Math.random() * variance));
-      timer = window.setTimeout(loop, nextDelay);
-    };
-
-    timer = window.setTimeout(loop, isObserving ? 6000 : 18000);
-
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [isObserving, session?.sessionId]);
-
-  // Send message
+  // Send message: Pure user transmission to Supabase
   const sendMessage = async () => {
     if (!session || !draft.trim() || busyRef.current) return;
     const text = draft.trim();
@@ -477,77 +292,21 @@ export default function IndexPage() {
         message: text,
         world: session.world as "living-room" | "music-room",
       });
-      const createdAt = new Date().toISOString();
-      applyMessage({
-        messageId: result.userMessageId,
-        speaker: activeSpeaker,
-        text,
-        source: "user",
-        interactionId: null,
-        createdAt,
-      });
-      applyMessage({
-        messageId: result.responseMessageId,
-        speaker: result.speaker,
-        text: result.message,
-        source: "simulation",
-        interactionId: result.interactionId,
-        createdAt: new Date().toISOString(),
-      });
+      applyMessage(result.message);
       setSession((current) =>
         current
           ? {
               ...current,
-              currentActivity:
-                result.speaker === "clint"
-                  ? "Clint is speaking"
-                  : "Maica is speaking",
+              currentActivity: `${activeSpeaker === "clint" ? "Clint" : "Maica"} transmitted a message`,
             }
           : current
       );
     } catch (sendError) {
-      console.warn("Backend chat failed, using local simulation reply:", sendError);
-      try {
-        const fallbackChat = sendClientSimulationChat({
-          sessionId: session.sessionId,
-          speaker: activeSpeaker,
-          message: text,
-          world: session.world,
-        });
-        applyMessage({
-          messageId: fallbackChat.userMessageId,
-          speaker: activeSpeaker,
-          text,
-          source: "user",
-          interactionId: null,
-          createdAt: new Date().toISOString(),
-        });
-        applyMessage({
-          messageId: fallbackChat.responseMessageId,
-          speaker: fallbackChat.speaker,
-          text: fallbackChat.message,
-          source: "simulation",
-          interactionId: fallbackChat.interactionId,
-          createdAt: new Date().toISOString(),
-        });
-        setSession((current) =>
-          current
-            ? {
-                ...current,
-                currentActivity:
-                  fallbackChat.speaker === "clint"
-                    ? "Clint is speaking"
-                    : "Maica is speaking",
-              }
-            : current
-        );
-      } catch (localError) {
-        setError(
-          sendError instanceof Error
-            ? sendError.message
-            : "The simulation could not answer."
-        );
-      }
+      setError(
+        sendError instanceof Error
+          ? sendError.message
+          : "Transmission failed. Ensure database is connected."
+      );
     } finally {
       busyRef.current = false;
       setIsSending(false);
@@ -646,33 +405,9 @@ export default function IndexPage() {
         </div>
 
         <div className={styles.headerMeta}>
-          <button
-            type="button"
-            onClick={toggleEngineMode}
-            className={`${styles.metaTag} ${
-              engineStatus?.geminiConfigured ? styles.metaTagActive : ""
-            }`}
-            style={{
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontFamily: "inherit",
-              background: engineStatus?.geminiConfigured
-                ? "rgba(90, 200, 250, 0.16)"
-                : "rgba(255, 255, 255, 0.05)",
-              border: engineStatus?.geminiConfigured
-                ? "1px solid rgba(90, 200, 250, 0.4)"
-                : "1px solid rgba(255, 255, 255, 0.1)",
-              transition: "all 0.2s ease",
-            }}
-            title={`Current mode: ${
-              engineStatus?.geminiConfigured ? "AI" : "Scripted Hardcoded"
-            }. Click to toggle mode.`}
-          >
-            <span>{engineStatus?.geminiConfigured ? "✨ AI" : "📜 SCRIPTED"}</span>
-            <span style={{ fontSize: "9px", opacity: 0.6 }}>⇄</span>
-          </button>
+          <span className={styles.metaTag}>
+            {session ? "OBSERVATORY ACTIVE" : "STANDBY"}
+          </span>
           <span className={styles.metaTag}>{dayCycle.phase.toUpperCase()}</span>
           <button
             type="button"
@@ -785,7 +520,7 @@ export default function IndexPage() {
 
           <div className={styles.controlBlock}>
             <span>PERSISTENT SESSION</span>
-            <strong>{session ? "ACTIVE" : "INITIALIZING"}</strong>
+            <strong>{session ? "ACTIVE" : "STANDBY"}</strong>
             <small>
               Session ID: {session?.sessionId.slice(0, 16)}...
               <br />
@@ -796,41 +531,10 @@ export default function IndexPage() {
           </div>
 
           <div className={styles.controlBlock}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-              <span>INTELLIGENCE ENGINE</span>
-              <button
-                type="button"
-                onClick={toggleEngineMode}
-                style={{
-                  background: engineStatus?.geminiConfigured
-                    ? "rgba(90, 200, 250, 0.15)"
-                    : "rgba(255, 255, 255, 0.08)",
-                  border: engineStatus?.geminiConfigured
-                    ? "1px solid #5ac8fa"
-                    : "1px solid rgba(255, 255, 255, 0.2)",
-                  color: engineStatus?.geminiConfigured ? "#5ac8fa" : "#dde3ec",
-                  padding: "3px 8px",
-                  borderRadius: "3px",
-                  fontSize: "9px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  fontFamily: "inherit",
-                }}
-              >
-                Switch to {engineStatus?.geminiConfigured ? "Scripted" : "AI"}
-              </button>
-            </div>
-            <strong>
-              {engineStatus?.geminiConfigured
-                ? "AI Engine (Active)"
-                : "Scripted Dialogue Engine"}
-            </strong>
+            <span>SIMULATION ARCHITECTURE</span>
+            <strong>Presentation Layer (Vercel)</strong>
             <small>
-              {engineStatus?.geminiConfigured
-                ? "Live intelligent character model simulating Clint & Maica's authentic voice, Taglish/Bisaya nuances, and shared memories."
-                : "Deterministic relational dialogue matrix running offline with hardcoded interactions."}
+              Observatory UI &amp; Supabase data shell. Autonomous simulation reasoning &amp; Gemini orchestration are managed by the external Python engine.
             </small>
           </div>
 

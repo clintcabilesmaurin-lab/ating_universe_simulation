@@ -12,6 +12,7 @@ export type MemoryCategory =
   | "future_homestead";
 
 export type SimulationSpeaker = "clint" | "maica";
+export type Speaker = SimulationSpeaker;
 
 export interface SimulationSession {
   sessionId: string;

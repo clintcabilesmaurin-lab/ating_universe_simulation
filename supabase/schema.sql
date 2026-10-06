@@ -68,17 +68,18 @@ create policy "Public sessions insert" on simulation_sessions for insert with ch
 drop policy if exists "Public sessions update" on simulation_sessions;
 create policy "Public sessions update" on simulation_sessions for update using (true);
 
+-- Public messages policies: public users can read, and insert their own transmissions (source = 'user')
 drop policy if exists "Public messages select" on simulation_messages;
 create policy "Public messages select" on simulation_messages for select using (true);
 
 drop policy if exists "Public messages insert" on simulation_messages;
-create policy "Public messages insert" on simulation_messages for insert with check (true);
+create policy "Public messages insert" on simulation_messages for insert with check (source = 'user');
 
+-- Public memories policies: read-only for public observatory. Mutated only by service role.
 drop policy if exists "Public memories select" on simulation_memories;
 create policy "Public memories select" on simulation_memories for select using (true);
 
 drop policy if exists "Public memories insert" on simulation_memories;
-create policy "Public memories insert" on simulation_memories for insert with check (true);
 
 -- ============================================================================
 -- SEED DATA: SHARED MEMORIES & CANONICAL LORE

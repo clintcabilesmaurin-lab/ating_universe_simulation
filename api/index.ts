@@ -3,12 +3,10 @@ import * as sessionGET from "../endpoints/simulation/session_GET";
 import * as chatPOST from "../endpoints/simulation/chat_POST";
 import * as messagesGET from "../endpoints/simulation/messages_GET";
 import * as musicPOST from "../endpoints/simulation/music_POST";
-import * as tickPOST from "../endpoints/simulation/tick_POST";
 import * as worldPOST from "../endpoints/simulation/world_POST";
 import * as tokenPOST from "../endpoints/_realtime/token_POST";
 import * as sendPOST from "../endpoints/_realtime/send_POST";
 import * as lastseenPOST from "../endpoints/_realtime/lastseen_POST";
-import * as engineGET from "../endpoints/simulation/engine_GET";
 
 const routes: Record<
   string,
@@ -27,15 +25,8 @@ const routes: Record<
   "/_api/simulation/music": {
     POST: musicPOST.handle,
   },
-  "/_api/simulation/tick": {
-    POST: tickPOST.handle,
-  },
   "/_api/simulation/world": {
     POST: worldPOST.handle,
-  },
-  "/_api/simulation/engine-status": {
-    GET: engineGET.handle,
-    POST: engineGET.handle,
   },
   "/_api/_realtime/token": {
     POST: tokenPOST.handle,

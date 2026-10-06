@@ -18,6 +18,7 @@ export async function handle(request: Request): Promise<Response> {
     }
 
     let session = await db.sessions.get(input.sessionId);
+    const currentActivity = "Listening to " + track.title;
 
     if (!session) {
       session = await db.sessions.create({
@@ -25,60 +26,21 @@ export async function handle(request: Request): Promise<Response> {
         world: "music-room",
         clintMood: "reflective",
         maicaMood: "warm",
-        currentActivity: "Listening to " + track.title,
+        currentActivity,
         activeMusic: track.id,
       });
+    } else {
+      await db.sessions.update(input.sessionId, {
+        activeMusic: track.id,
+        currentActivity,
+        updatedAt: new Date(),
+      });
     }
-
-    const currentActivity = "Listening to " + track.title;
-    const interactionId = "music_" + track.id + "_" + Date.now();
-
-    const clintMatch = track.description.match(/\*\*Clint:\*\*\n([\s\S]*?)(?:\n\n|$)/);
-    const maicaMatch = track.description.match(/\*\*Maica:\*\*\n([\s\S]*)$/);
-    const trackMessages = [
-      clintMatch?.[1]?.trim() ? { speaker: "clint" as const, text: clintMatch[1].trim() } : null,
-      maicaMatch?.[1]?.trim() ? { speaker: "maica" as const, text: maicaMatch[1].trim() } : null,
-    ].filter((item): item is { speaker: "clint" | "maica"; text: string } => Boolean(item));
-
-    const messages = trackMessages.map((message, index) => ({
-      messageId: "msg_" + interactionId + "_" + index,
-      speaker: message.speaker,
-      text: message.text,
-      interactionId,
-      createdAt: new Date(Date.now() + index),
-    }));
-
-    if (messages.length > 0) {
-      await db.messages.insert(
-        messages.map((message) => ({
-          messageId: message.messageId,
-          sessionId: input.sessionId,
-          speaker: message.speaker,
-          text: message.text,
-          source: "simulation",
-          interactionId: message.interactionId,
-          createdAt: message.createdAt,
-        }))
-      );
-    }
-
-    await db.sessions.update(input.sessionId, {
-      activeMusic: track.id,
-      currentActivity,
-      updatedAt: new Date(),
-    });
 
     const output: OutputType = {
       sessionId: input.sessionId,
       trackId: track.id,
       currentActivity,
-      messages: messages.map((message) => ({
-        messageId: message.messageId,
-        speaker: message.speaker,
-        text: message.text,
-        interactionId: message.interactionId,
-        createdAt: message.createdAt.toISOString(),
-      })),
     };
 
     await publish("simulation:main", {
@@ -94,7 +56,7 @@ export async function handle(request: Request): Promise<Response> {
       superjson.stringify({
         error: error instanceof Error ? error.message : "Music selection failed.",
       }),
-      { status: 502 }
+      { status: 500 }
     );
   }
 }
