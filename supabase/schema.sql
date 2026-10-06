@@ -58,7 +58,7 @@ create index if not exists idx_sim_memories_category
 --
 -- Architecture:
 --   Browser / React -> Vercel API endpoints -> Server-side Supabase client
---   (SUPABASE_SERVICE_ROLE_KEY) -> Supabase PostgreSQL
+--   (SUPABASE_SECRET_KEY) -> Supabase PostgreSQL
 --
 -- Authoritative Privilege Matrix:
 --   anon:          SELECT = false, INSERT = false, UPDATE = false

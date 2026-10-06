@@ -20,12 +20,12 @@ function requireServerClient() {
   }
 
   const url = getServerSupabaseUrl();
-  const serviceKey = getServerSupabaseKey();
+  const secretKey = getServerSupabaseKey();
 
-  if (!url || !serviceKey) {
+  if (!url || !secretKey) {
     const missing: string[] = [];
     if (!url) missing.push("VITE_SUPABASE_URL (or SUPABASE_URL)");
-    if (!serviceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (!secretKey) missing.push("SUPABASE_SECRET_KEY");
     throw new Error(
       `[Supabase] Server database client unavailable. Missing required server environment variable(s): ${missing.join(", ")}.`
     );
@@ -83,7 +83,7 @@ function toMemory(row: SupabaseMemoryRow): SimulationMemory {
 
 /**
  * Thin Server-Only Supabase Data Access Layer:
- * Connects exclusively via SUPABASE_SERVICE_ROLE_KEY on the server.
+ * Connects exclusively via SUPABASE_SECRET_KEY on the server.
  * No in-memory database, no fallback persistence, and no direct browser table access.
  */
 export const db = {

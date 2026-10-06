@@ -65,7 +65,7 @@ export function getSupabaseAnonKey(): string | undefined {
 }
 
 /**
- * Returns the privileged server-only Supabase service-role key (SUPABASE_SERVICE_ROLE_KEY).
+ * Returns the privileged server-only Supabase Secret Key (SUPABASE_SECRET_KEY).
  * CRITICAL:
  * - Strictly server-only (Node / Vercel serverless).
  * - NEVER falls back to VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY.
@@ -75,8 +75,8 @@ export function getServerSupabaseKey(): string | undefined {
   if (typeof window !== "undefined") {
     return undefined;
   }
-  if (typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY) {
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY.trim();
+  if (typeof process !== "undefined" && process.env?.SUPABASE_SECRET_KEY) {
+    const key = process.env.SUPABASE_SECRET_KEY.trim();
     if (key.length > 0) return key;
   }
   return undefined;
@@ -126,8 +126,8 @@ export function getBrowserSupabaseClient(): SupabaseClient<any> | null {
 
 /**
  * Initializes or returns the privileged server-only Supabase client
- * using (SUPABASE_URL or VITE_SUPABASE_URL) + SUPABASE_SERVICE_ROLE_KEY ONLY.
- * Never downgrades to the anon key.
+ * using (SUPABASE_URL or VITE_SUPABASE_URL) + SUPABASE_SECRET_KEY ONLY.
+ * Never downgrades to the publishable/anon key.
  */
 export function getServerSupabaseClient(): SupabaseClient<any> | null {
   if (typeof window !== "undefined") {
@@ -137,14 +137,14 @@ export function getServerSupabaseClient(): SupabaseClient<any> | null {
   }
 
   const url = getServerSupabaseUrl();
-  const serviceRoleKey = getServerSupabaseKey();
+  const secretKey = getServerSupabaseKey();
 
-  if (!url || !serviceRoleKey) {
+  if (!url || !secretKey) {
     return null;
   }
 
   if (!cachedServerClient) {
-    cachedServerClient = createClient(url, serviceRoleKey, {
+    cachedServerClient = createClient(url, secretKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
