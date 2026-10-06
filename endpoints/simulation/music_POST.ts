@@ -17,20 +17,17 @@ export async function handle(request: Request): Promise<Response> {
       return new Response(superjson.stringify({ error: "Music track not found." }), { status: 404 });
     }
 
-    let session = await db.selectFrom("simulationSessions")
-      .select(["sessionId"])
-      .where("sessionId", "=", input.sessionId)
-      .executeTakeFirst();
+    let session = await db.sessions.get(input.sessionId);
 
     if (!session) {
-      session = await db.insertInto("simulationSessions").values({
+      session = await db.sessions.create({
         sessionId: input.sessionId,
         world: "music-room",
         clintMood: "reflective",
         maicaMood: "warm",
         currentActivity: "Listening to " + track.title,
         activeMusic: track.id,
-      }).returningAll().executeTakeFirstOrThrow();
+      });
     }
 
     const currentActivity = "Listening to " + track.title;
@@ -52,7 +49,7 @@ export async function handle(request: Request): Promise<Response> {
     }));
 
     if (messages.length > 0) {
-      await db.insertInto("simulationMessages").values(
+      await db.messages.insert(
         messages.map((message) => ({
           messageId: message.messageId,
           sessionId: input.sessionId,
@@ -61,18 +58,15 @@ export async function handle(request: Request): Promise<Response> {
           source: "simulation",
           interactionId: message.interactionId,
           createdAt: message.createdAt,
-        })),
-      ).execute();
+        }))
+      );
     }
 
-    await db.updateTable("simulationSessions")
-      .set({
-        activeMusic: track.id,
-        currentActivity,
-        updatedAt: new Date(),
-      })
-      .where("sessionId", "=", input.sessionId)
-      .execute();
+    await db.sessions.update(input.sessionId, {
+      activeMusic: track.id,
+      currentActivity,
+      updatedAt: new Date(),
+    });
 
     const output: OutputType = {
       sessionId: input.sessionId,
@@ -96,8 +90,11 @@ export async function handle(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(superjson.stringify({
-      error: error instanceof Error ? error.message : "Music selection failed.",
-    }), { status: 502 });
+    return new Response(
+      superjson.stringify({
+        error: error instanceof Error ? error.message : "Music selection failed.",
+      }),
+      { status: 502 }
+    );
   }
 }

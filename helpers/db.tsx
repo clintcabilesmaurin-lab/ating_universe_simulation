@@ -1,20 +1,22 @@
-import fs from "node:fs";
-import path from "node:path";
-import { type Kysely } from "kysely";
-import { DB } from "./schema";
+import { getSupabaseClient, isSupabaseConfigured } from "./supabase";
+import type {
+  SimulationSession,
+  SimulationMessage,
+  SimulationMemory,
+  SupabaseSessionRow,
+  SupabaseMessageRow,
+  SupabaseMemoryRow,
+} from "./schema";
 
-// Local persistent database store. Safe for local, Docker, and Vercel serverless environments.
-const isServerless = Boolean(
-  process.env.VERCEL ||
-  process.env.AWS_LAMBDA_FUNCTION_NAME ||
-  process.env.LAMBDA_TASK_ROOT
-);
-const ROOT_DATA_DIR = path.resolve(process.cwd(), "data");
-const ROOT_DB_FILE = path.join(ROOT_DATA_DIR, "simulation_store.json");
-const DATA_DIR = isServerless ? path.join("/tmp", "data") : ROOT_DATA_DIR;
-const DB_FILE = isServerless ? path.join("/tmp", "data", "simulation_store.json") : ROOT_DB_FILE;
-
-const defaultMemories = [
+// Default seed memories representing Clint & Maica's shared lore
+export const defaultMemories: Array<{
+  memoryId: string;
+  memoryCategory: any;
+  title: string;
+  description: string;
+  keywords: string[];
+  createdAt: Date;
+}> = [
   {
     memoryId: "mem_narra",
     memoryCategory: "relational_concept",
@@ -179,273 +181,346 @@ const defaultMemories = [
   },
 ];
 
-const sessionStore = new Map<string, any>();
-let messageStore: any[] = [];
-let memoryStore: any[] = [...defaultMemories];
-
-function initPersistence() {
-  try {
-    try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-    } catch {
-      // In-memory mode if directory creation is restricted
-    }
-
-    const fileToLoad = fs.existsSync(DB_FILE)
-      ? DB_FILE
-      : fs.existsSync(ROOT_DB_FILE)
-      ? ROOT_DB_FILE
-      : null;
-
-    if (fileToLoad) {
-      const raw = fs.readFileSync(fileToLoad, "utf-8");
-      const data = JSON.parse(raw);
-      if (data.sessions && typeof data.sessions === "object") {
-        for (const [k, v] of Object.entries(data.sessions as Record<string, any>)) {
-          const sessionVal = (v && typeof v === "object" ? v : {}) as Record<string, any>;
-          sessionStore.set(k, {
-            ...sessionVal,
-            createdAt: sessionVal.createdAt ? new Date(sessionVal.createdAt) : new Date(),
-            updatedAt: sessionVal.updatedAt ? new Date(sessionVal.updatedAt) : new Date(),
-          });
-        }
-      }
-      if (Array.isArray(data.messages)) {
-        messageStore = data.messages.map((m: any) => ({
-          ...m,
-          createdAt: m.createdAt ? new Date(m.createdAt) : new Date(),
-        }));
-      }
-      if (Array.isArray(data.memories) && data.memories.length > 0) {
-        memoryStore = data.memories.map((mem: any) => ({
-          ...mem,
-          createdAt: mem.createdAt ? new Date(mem.createdAt) : new Date(),
-        }));
-      }
-      const existingIds = new Set(memoryStore.map((m) => m.memoryId));
-      for (const def of defaultMemories) {
-        if (!existingIds.has(def.memoryId)) {
-          memoryStore.push(def);
-        }
-      }
-    } else {
-      savePersistence();
-    }
-  } catch (err) {
-    console.warn("Could not read persistence file, initializing memory store:", err);
-  }
-}
-
-let saveTimer: NodeJS.Timeout | null = null;
-function savePersistence() {
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-      const data = {
-        sessions: Object.fromEntries(sessionStore.entries()),
-        messages: messageStore,
-        memories: memoryStore,
-      };
-      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (err) {
-      // In-memory fallback if filesystem is read-only (e.g. Vercel)
-      console.warn("Running in-memory persistence (disk write unavailable):", err);
-    }
-  }, 40);
-}
-
-initPersistence();
-
-function createDatabaseDriver() {
+// Helper mappers between Supabase snake_case rows and application objects
+function toSession(row: SupabaseSessionRow): SimulationSession {
   return {
-    selectFrom(table: string) {
-      const filters: Array<{ field: string; op: string; value: any }> = [];
-      let sortField: string | null = null;
-      let sortDirection: "asc" | "desc" = "asc";
-      let limitCount: number | null = null;
-
-      const queryBuilder: any = {
-        selectAll() {
-          return queryBuilder;
-        },
-        select(fields: string[]) {
-          return queryBuilder;
-        },
-        where(field: string, op: string, value: any) {
-          filters.push({ field, op, value });
-          return queryBuilder;
-        },
-        orderBy(field: string, direction: "asc" | "desc" = "asc") {
-          sortField = field;
-          sortDirection = direction;
-          return queryBuilder;
-        },
-        limit(n: number) {
-          limitCount = n;
-          return queryBuilder;
-        },
-        $if(condition: boolean, fn: (builder: any) => any) {
-          if (condition) fn(queryBuilder);
-          return queryBuilder;
-        },
-        async execute(): Promise<any[]> {
-          let rows: any[] = [];
-          if (table === "simulationSessions") {
-            rows = Array.from(sessionStore.values());
-          } else if (table === "simulationMessages") {
-            rows = [...messageStore];
-          } else if (table === "simulationMemories") {
-            rows = [...memoryStore];
-          }
-
-          for (const f of filters) {
-            rows = rows.filter((r) => {
-              if (f.op === "=") return r[f.field] === f.value;
-              if (f.op === "<") {
-                const val = r[f.field] instanceof Date ? r[f.field].getTime() : new Date(r[f.field]).getTime();
-                const target = f.value instanceof Date ? f.value.getTime() : new Date(f.value).getTime();
-                return val < target;
-              }
-              return true;
-            });
-          }
-
-          if (sortField) {
-            rows.sort((a, b) => {
-              const valA = a[sortField!] instanceof Date ? a[sortField!].getTime() : a[sortField!];
-              const valB = b[sortField!] instanceof Date ? b[sortField!].getTime() : b[sortField!];
-              if (valA < valB) return sortDirection === "desc" ? 1 : -1;
-              if (valA > valB) return sortDirection === "desc" ? -1 : 1;
-              return 0;
-            });
-          }
-
-          if (limitCount !== null) {
-            rows = rows.slice(0, limitCount);
-          }
-
-          return rows;
-        },
-        async executeTakeFirst(): Promise<any | undefined> {
-          const res = await queryBuilder.execute();
-          return res[0];
-        },
-      };
-
-      return queryBuilder;
-    },
-
-    insertInto(table: string) {
-      let insertValues: any = null;
-
-      const insertBuilder: any = {
-        values(vals: any) {
-          insertValues = vals;
-          return insertBuilder;
-        },
-        returningAll() {
-          return insertBuilder;
-        },
-        returning(fields: string[]) {
-          return insertBuilder;
-        },
-        async execute(): Promise<void> {
-          if (table === "simulationMessages") {
-            const items = Array.isArray(insertValues) ? insertValues : [insertValues];
-            for (const item of items) {
-              messageStore.push({
-                ...item,
-                createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt || Date.now()),
-              });
-            }
-            savePersistence();
-          }
-        },
-        async executeTakeFirst(): Promise<any> {
-          if (table === "simulationSessions") {
-            const record = {
-              sessionId: insertValues.sessionId,
-              world: insertValues.world ?? "living-room",
-              clintMood: insertValues.clintMood ?? "reflective",
-              maicaMood: insertValues.maicaMood ?? "warm",
-              currentActivity: insertValues.currentActivity ?? "sitting together",
-              activeMusic: insertValues.activeMusic ?? null,
-              activeEvent: insertValues.activeEvent ?? null,
-              eventExpiresAt: insertValues.eventExpiresAt ?? null,
-              eventCooldowns: insertValues.eventCooldowns ?? {},
-              clintInteractionId: insertValues.clintInteractionId ?? null,
-              maicaInteractionId: insertValues.maicaInteractionId ?? null,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            };
-            sessionStore.set(record.sessionId, record);
-            savePersistence();
-            return record;
-          }
-          return insertValues;
-        },
-        async executeTakeFirstOrThrow(): Promise<any> {
-          return insertBuilder.executeTakeFirst();
-        },
-      };
-
-      return insertBuilder;
-    },
-
-    updateTable(table: string) {
-      let updateValues: any = {};
-      const filters: Array<{ field: string; op: string; value: any }> = [];
-
-      const updateBuilder: any = {
-        set(vals: any) {
-          updateValues = { ...updateValues, ...vals };
-          return updateBuilder;
-        },
-        where(field: string, op: string, value: any) {
-          filters.push({ field, op, value });
-          return updateBuilder;
-        },
-        returning(fields: string[]) {
-          return updateBuilder;
-        },
-        async execute(): Promise<void> {
-          if (table === "simulationSessions") {
-            for (const f of filters) {
-              if (f.field === "sessionId" && f.op === "=") {
-                const existing = sessionStore.get(f.value);
-                if (existing) {
-                  Object.assign(existing, updateValues);
-                  savePersistence();
-                }
-              }
-            }
-          }
-        },
-        async executeTakeFirst(): Promise<any> {
-          if (table === "simulationSessions") {
-            for (const f of filters) {
-              if (f.field === "sessionId" && f.op === "=") {
-                const existing = sessionStore.get(f.value);
-                if (existing) {
-                  Object.assign(existing, updateValues);
-                  savePersistence();
-                  return existing;
-                }
-              }
-            }
-          }
-          return undefined;
-        },
-      };
-
-      return updateBuilder;
-    },
+    sessionId: row.session_id,
+    world: row.world ?? "living-room",
+    clintMood: row.clint_mood ?? "reflective",
+    maicaMood: row.maica_mood ?? "warm",
+    currentActivity: row.current_activity ?? "sitting together",
+    activeMusic: row.active_music,
+    activeEvent: row.active_event,
+    eventExpiresAt: row.event_expires_at,
+    eventCooldowns: row.event_cooldowns ?? {},
+    clintInteractionId: row.clint_interaction_id,
+    maicaInteractionId: row.maica_interaction_id,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
   };
 }
 
-export const db: Kysely<DB> = createDatabaseDriver() as unknown as Kysely<DB>;
+function toMessage(row: SupabaseMessageRow): SimulationMessage {
+  return {
+    messageId: row.message_id,
+    sessionId: row.session_id,
+    speaker: (row.speaker as "clint" | "maica") ?? "clint",
+    text: row.text,
+    source: row.source ?? "simulation",
+    interactionId: row.interaction_id,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function toMemory(row: SupabaseMemoryRow): SimulationMemory {
+  return {
+    memoryId: row.memory_id,
+    memoryCategory: row.memory_category as any,
+    title: row.title,
+    description: row.description,
+    keywords: row.keywords ?? [],
+    createdAt: new Date(row.created_at),
+  };
+}
+
+// Fallback in-memory transient store (only active if Supabase env vars are not set)
+const transientSessions = new Map<string, SimulationSession>();
+const transientMessages: SimulationMessage[] = [];
+let memoriesSeeded = false;
+
+/**
+ * Supabase Database Repository:
+ * Persistent source of truth for the Ating Universe Simulation.
+ */
+export const db = {
+  sessions: {
+    async get(sessionId: string): Promise<SimulationSession | null> {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client
+            .from("simulation_sessions")
+            .select("*")
+            .eq("session_id", sessionId)
+            .maybeSingle();
+          if (error) {
+            console.warn("[Supabase] Error loading session:", error.message);
+          } else if (data) {
+            return toSession(data as SupabaseSessionRow);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error loading session:", err);
+        }
+      }
+      return transientSessions.get(sessionId) ?? null;
+    },
+
+    async create(
+      input: Partial<SimulationSession> & { sessionId: string }
+    ): Promise<SimulationSession> {
+      const now = new Date();
+      const session: SimulationSession = {
+        sessionId: input.sessionId,
+        world: input.world ?? "living-room",
+        clintMood: input.clintMood ?? "reflective",
+        maicaMood: input.maicaMood ?? "warm",
+        currentActivity: input.currentActivity ?? "sitting together",
+        activeMusic: input.activeMusic ?? null,
+        activeEvent: input.activeEvent ?? null,
+        eventExpiresAt: input.eventExpiresAt ?? null,
+        eventCooldowns: input.eventCooldowns ?? {},
+        clintInteractionId: input.clintInteractionId ?? null,
+        maicaInteractionId: input.maicaInteractionId ?? null,
+        createdAt: input.createdAt ?? now,
+        updatedAt: input.updatedAt ?? now,
+      };
+
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const row: SupabaseSessionRow = {
+            session_id: session.sessionId,
+            world: session.world,
+            clint_mood: session.clintMood,
+            maica_mood: session.maicaMood,
+            current_activity: session.currentActivity,
+            active_music: session.activeMusic,
+            active_event: session.activeEvent,
+            event_expires_at: session.eventExpiresAt,
+            event_cooldowns: session.eventCooldowns,
+            clint_interaction_id: session.clintInteractionId,
+            maica_interaction_id: session.maicaInteractionId,
+            created_at: session.createdAt.toISOString(),
+            updated_at: session.updatedAt.toISOString(),
+          };
+
+          const { data, error } = await client
+            .from("simulation_sessions")
+            .upsert(row, { onConflict: "session_id" })
+            .select("*")
+            .single();
+
+          if (error) {
+            console.warn("[Supabase] Error creating session:", error.message);
+          } else if (data) {
+            return toSession(data as SupabaseSessionRow);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error creating session:", err);
+        }
+      }
+
+      transientSessions.set(session.sessionId, session);
+      return session;
+    },
+
+    async update(
+      sessionId: string,
+      updates: Partial<SimulationSession>
+    ): Promise<SimulationSession | null> {
+      const now = new Date();
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const rowUpdates: Partial<SupabaseSessionRow> = {
+            updated_at: now.toISOString(),
+          };
+          if (updates.world !== undefined) rowUpdates.world = updates.world;
+          if (updates.clintMood !== undefined) rowUpdates.clint_mood = updates.clintMood;
+          if (updates.maicaMood !== undefined) rowUpdates.maica_mood = updates.maicaMood;
+          if (updates.currentActivity !== undefined)
+            rowUpdates.current_activity = updates.currentActivity;
+          if (updates.activeMusic !== undefined) rowUpdates.active_music = updates.activeMusic;
+          if (updates.activeEvent !== undefined) rowUpdates.active_event = updates.activeEvent;
+          if (updates.eventExpiresAt !== undefined)
+            rowUpdates.event_expires_at = updates.eventExpiresAt;
+          if (updates.eventCooldowns !== undefined)
+            rowUpdates.event_cooldowns = updates.eventCooldowns;
+          if (updates.clintInteractionId !== undefined)
+            rowUpdates.clint_interaction_id = updates.clintInteractionId;
+          if (updates.maicaInteractionId !== undefined)
+            rowUpdates.maica_interaction_id = updates.maicaInteractionId;
+
+          const { data, error } = await client
+            .from("simulation_sessions")
+            .update(rowUpdates)
+            .eq("session_id", sessionId)
+            .select("*")
+            .single();
+
+          if (error) {
+            console.warn("[Supabase] Error updating session:", error.message);
+          } else if (data) {
+            return toSession(data as SupabaseSessionRow);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error updating session:", err);
+        }
+      }
+
+      const existing = transientSessions.get(sessionId);
+      if (existing) {
+        Object.assign(existing, updates, { updatedAt: now });
+        return existing;
+      }
+      return null;
+    },
+  },
+
+  messages: {
+    async list(params: {
+      sessionId: string;
+      before?: string | null;
+      limit?: number;
+    }): Promise<SimulationMessage[]> {
+      const limit = params.limit ?? 50;
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          let query = client
+            .from("simulation_messages")
+            .select("*")
+            .eq("session_id", params.sessionId)
+            .order("created_at", { ascending: false });
+
+          if (params.before) {
+            query = query.lt("created_at", params.before);
+          }
+
+          query = query.limit(limit);
+
+          const { data, error } = await query;
+          if (error) {
+            console.warn("[Supabase] Error listing messages:", error.message);
+          } else if (data) {
+            return (data as SupabaseMessageRow[]).map(toMessage);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error listing messages:", err);
+        }
+      }
+
+      // Transient in-memory fallback
+      let list = transientMessages.filter((m) => m.sessionId === params.sessionId);
+      if (params.before) {
+        const beforeTime = new Date(params.before).getTime();
+        list = list.filter((m) => m.createdAt.getTime() < beforeTime);
+      }
+      list.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      return list.slice(0, limit);
+    },
+
+    async insert(
+      items:
+        | Array<{
+            messageId: string;
+            sessionId: string;
+            speaker: "clint" | "maica";
+            text: string;
+            source?: string;
+            interactionId?: string | null;
+            createdAt?: Date;
+          }>
+        | {
+            messageId: string;
+            sessionId: string;
+            speaker: "clint" | "maica";
+            text: string;
+            source?: string;
+            interactionId?: string | null;
+            createdAt?: Date;
+          }
+    ): Promise<void> {
+      const rawList = Array.isArray(items) ? items : [items];
+      if (rawList.length === 0) return;
+
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const rows: SupabaseMessageRow[] = rawList.map((item) => ({
+            message_id: item.messageId,
+            session_id: item.sessionId,
+            speaker: item.speaker,
+            text: item.text,
+            source: item.source ?? "simulation",
+            interaction_id: item.interactionId ?? null,
+            created_at: (item.createdAt ?? new Date()).toISOString(),
+          }));
+
+          const { error } = await client.from("simulation_messages").insert(rows);
+          if (error) {
+            console.warn("[Supabase] Error inserting messages:", error.message);
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error inserting messages:", err);
+        }
+      }
+
+      // Keep transient in-memory sync
+      for (const item of rawList) {
+        transientMessages.push({
+          messageId: item.messageId,
+          sessionId: item.sessionId,
+          speaker: item.speaker,
+          text: item.text,
+          source: item.source ?? "simulation",
+          interactionId: item.interactionId ?? null,
+          createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(),
+        });
+      }
+    },
+  },
+
+  memories: {
+    async list(): Promise<SimulationMemory[]> {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client
+            .from("simulation_memories")
+            .select("*")
+            .order("created_at", { ascending: true });
+
+          if (error) {
+            console.warn("[Supabase] Error listing memories:", error.message);
+          } else if (data && data.length > 0) {
+            return (data as SupabaseMemoryRow[]).map(toMemory);
+          } else if (data && data.length === 0 && !memoriesSeeded) {
+            // Seed memories to Supabase
+            memoriesSeeded = true;
+            await this.seed();
+            return defaultMemories.map((m) => ({
+              ...m,
+              createdAt: m.createdAt,
+            }));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Unexpected error listing memories:", err);
+        }
+      }
+
+      return defaultMemories.map((m) => ({
+        ...m,
+        createdAt: m.createdAt,
+      }));
+    },
+
+    async seed(): Promise<void> {
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const rows: SupabaseMemoryRow[] = defaultMemories.map((m) => ({
+          memory_id: m.memoryId,
+          memory_category: m.memoryCategory,
+          title: m.title,
+          description: m.description,
+          keywords: m.keywords,
+          created_at: m.createdAt.toISOString(),
+        }));
+        await client.from("simulation_memories").upsert(rows, { onConflict: "memory_id" });
+      } catch (err) {
+        console.warn("[Supabase] Error seeding memories:", err);
+      }
+    },
+  },
+};

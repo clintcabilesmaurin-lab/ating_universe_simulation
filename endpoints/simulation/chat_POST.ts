@@ -19,32 +19,25 @@ export async function handle(request: Request): Promise<Response> {
     if (!parsed.success) return json({ error: "Invalid simulation payload." }, 400);
 
     let session = parsed.data.sessionId
-      ? await db.selectFrom("simulationSessions")
-          .selectAll()
-          .where("sessionId", "=", parsed.data.sessionId)
-          .executeTakeFirst()
-      : undefined;
+      ? await db.sessions.get(parsed.data.sessionId)
+      : null;
 
     if (!session) {
-      session = await db
-        .insertInto("simulationSessions")
-        .values({
-          sessionId: "sim_" + nanoid(16),
-          world: parsed.data.world,
-          clintMood: "reflective",
-          maicaMood: "warm",
-          currentActivity: "listening",
-          activeMusic: null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+      session = await db.sessions.create({
+        sessionId: parsed.data.sessionId || "sim_" + nanoid(16),
+        world: parsed.data.world,
+        clintMood: "reflective",
+        maicaMood: "warm",
+        currentActivity: "listening",
+        activeMusic: null,
+      });
     }
 
     const userMessageId = "msg_" + nanoid(16);
     const responseMessageId = "msg_" + nanoid(16);
     const now = new Date();
 
-    await db.insertInto("simulationMessages").values({
+    await db.messages.insert({
       messageId: userMessageId,
       sessionId: session.sessionId,
       speaker: parsed.data.speaker,
@@ -52,7 +45,7 @@ export async function handle(request: Request): Promise<Response> {
       source: "user",
       interactionId: null,
       createdAt: now,
-    }).execute();
+    });
 
     let replyText: string | null = null;
     let interactionId = "scripted_" + nanoid(10);
@@ -61,13 +54,10 @@ export async function handle(request: Request): Promise<Response> {
     if (isGeminiActive()) {
       try {
         const memories = await simulationMemoryRetriever(parsed.data.message, 3);
-        const history = await db
-          .selectFrom("simulationMessages")
-          .selectAll()
-          .where("sessionId", "=", session.sessionId)
-          .orderBy("createdAt", "desc")
-          .limit(6)
-          .execute();
+        const history = await db.messages.list({
+          sessionId: session.sessionId,
+          limit: 6,
+        });
 
         replyText = await generateGeminiChatReply({
           speaker: parsed.data.speaker,
@@ -96,7 +86,7 @@ export async function handle(request: Request): Promise<Response> {
     }
 
     const aiNow = new Date();
-    await db.insertInto("simulationMessages").values({
+    await db.messages.insert({
       messageId: responseMessageId,
       sessionId: session.sessionId,
       speaker: parsed.data.speaker,
@@ -104,19 +94,19 @@ export async function handle(request: Request): Promise<Response> {
       source,
       interactionId,
       createdAt: aiNow,
-    }).execute();
+    });
 
     const nextActivity =
       (parsed.data.speaker === "clint" ? "Clint" : "Maica") +
       " is speaking";
 
-    await db.updateTable("simulationSessions").set({
+    await db.sessions.update(session.sessionId, {
       updatedAt: aiNow,
       currentActivity: nextActivity,
       ...(parsed.data.speaker === "clint"
         ? { clintInteractionId: interactionId }
         : { maicaInteractionId: interactionId }),
-    }).where("sessionId", "=", session.sessionId).execute();
+    });
 
     const output = {
       configured: true,
@@ -137,10 +127,13 @@ export async function handle(request: Request): Promise<Response> {
   } catch (error) {
     console.error(
       "Simulation chat failed",
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
-    return json({
-      error: error instanceof Error ? error.message : "Simulation chat failed.",
-    }, 502);
+    return json(
+      {
+        error: error instanceof Error ? error.message : "Simulation chat failed.",
+      },
+      502
+    );
   }
 }

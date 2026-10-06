@@ -34,6 +34,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@react-three/drei": "10.7.8",
     "@react-three/fiber": "9.7.0",
+    "@supabase/supabase-js": "^2.117.2",
     "@tanstack/react-query": "^5.76.1",
     "@types/animejs": "^4.0.0",
     "animejs": "^4.5.0",

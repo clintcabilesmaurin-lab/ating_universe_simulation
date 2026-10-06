@@ -10,23 +10,26 @@ import type { InputType, OutputType } from "./tick_POST.schema";
 export async function handle(request: Request): Promise<Response> {
   try {
     const input = superjson.parse<InputType>(await request.text());
-    if (!input.sessionId) return new Response(superjson.stringify({ error: "sessionId is required." }), { status: 400 });
+    if (!input.sessionId) {
+      return new Response(superjson.stringify({ error: "sessionId is required." }), { status: 400 });
+    }
 
-    let session = await db.selectFrom("simulationSessions").selectAll()
-      .where("sessionId", "=", input.sessionId).executeTakeFirst();
+    let session = await db.sessions.get(input.sessionId);
     if (!session) {
-      session = await db.insertInto("simulationSessions").values({
+      session = await db.sessions.create({
         sessionId: input.sessionId,
         world: "living-room",
         clintMood: "reflective",
         maicaMood: "warm",
         currentActivity: "sitting together",
         activeMusic: null,
-      }).returningAll().executeTakeFirstOrThrow();
+      });
     }
 
-    const history = await db.selectFrom("simulationMessages").selectAll()
-      .where("sessionId", "=", input.sessionId).orderBy("createdAt", "desc").limit(1).execute();
+    const history = await db.messages.list({
+      sessionId: input.sessionId,
+      limit: 1,
+    });
     const lastSpeaker = history[0]?.speaker;
 
     if (session.world === "music-room" && musicLibrary.length > 0 && (Math.random() < 0.55 || !session.activeMusic)) {
@@ -42,7 +45,7 @@ export async function handle(request: Request): Promise<Response> {
       const messageId = "msg_" + nanoid(16);
       const createdAt = new Date();
 
-      await db.insertInto("simulationMessages").values({
+      await db.messages.insert({
         messageId,
         sessionId: input.sessionId,
         speaker: preferredSpeaker,
@@ -50,17 +53,14 @@ export async function handle(request: Request): Promise<Response> {
         source: "simulation",
         interactionId,
         createdAt,
-      }).execute();
+      });
 
-      await db.updateTable("simulationSessions")
-        .set({
-          activeMusic: track.id,
-          updatedAt: createdAt,
-          currentActivity,
-          ...(preferredSpeaker === "clint" ? { clintInteractionId: interactionId } : { maicaInteractionId: interactionId }),
-        })
-        .where("sessionId", "=", input.sessionId)
-        .execute();
+      await db.sessions.update(input.sessionId, {
+        activeMusic: track.id,
+        updatedAt: createdAt,
+        currentActivity,
+        ...(preferredSpeaker === "clint" ? { clintInteractionId: interactionId } : { maicaInteractionId: interactionId }),
+      });
 
       await publish("simulation:main", {
         type: "simulation.music",
@@ -133,7 +133,7 @@ export async function handle(request: Request): Promise<Response> {
     const messageId = "msg_" + nanoid(16);
     const createdAt = new Date();
 
-    await db.insertInto("simulationMessages").values({
+    await db.messages.insert({
       messageId,
       sessionId: input.sessionId,
       speaker: turn.speaker,
@@ -141,21 +141,18 @@ export async function handle(request: Request): Promise<Response> {
       source,
       interactionId,
       createdAt,
-    }).execute();
+    });
 
     const nextActivity = (turn.speaker === "clint" ? "Clint" : "Maica") + " is speaking · " + turn.activity;
 
-    await db.updateTable("simulationSessions")
-      .set({
-        updatedAt: createdAt,
-        currentActivity: nextActivity,
-        activeEvent: turn.nextState.activeEvent,
-        eventExpiresAt: turn.nextState.eventExpiresAt,
-        eventCooldowns: turn.nextState.eventCooldowns,
-        ...(turn.speaker === "clint" ? { clintInteractionId: interactionId } : { maicaInteractionId: interactionId }),
-      })
-      .where("sessionId", "=", input.sessionId)
-      .execute();
+    await db.sessions.update(input.sessionId, {
+      updatedAt: createdAt,
+      currentActivity: nextActivity,
+      activeEvent: turn.nextState.activeEvent,
+      eventExpiresAt: turn.nextState.eventExpiresAt ? turn.nextState.eventExpiresAt.toISOString() : null,
+      eventCooldowns: turn.nextState.eventCooldowns,
+      ...(turn.speaker === "clint" ? { clintInteractionId: interactionId } : { maicaInteractionId: interactionId }),
+    });
 
     const output: OutputType = {
       sessionId: input.sessionId,

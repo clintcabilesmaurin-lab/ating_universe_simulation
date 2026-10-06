@@ -15,10 +15,7 @@ const stopWords = new Set([
 ]);
 
 export async function simulationMemoryRetriever(message: string, limit = 6): Promise<SimulationMemory[]> {
-  const rows = await db
-    .selectFrom("simulationMemories")
-    .select(["memoryId", "memoryCategory", "title", "description", "keywords"])
-    .execute();
+  const rows = await db.memories.list();
 
   const terms = Array.from(
     new Set(

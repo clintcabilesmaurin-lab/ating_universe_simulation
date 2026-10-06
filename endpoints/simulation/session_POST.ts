@@ -29,38 +29,40 @@ export async function handle(): Promise<Response> {
   const now = Date.now();
   const createdMessages = [];
 
-  for (let i = 0; i < chosenStarter.length; i++) {
-    const item = chosenStarter[i];
-    const messageId = "msg_" + nanoid(16);
-    const createdAt = new Date(now - (chosenStarter.length - i) * 60000);
-    await db.insertInto("simulationMessages").values({
-      messageId,
-      sessionId,
-      speaker: item.speaker,
-      text: item.text,
-      source: "simulation",
-      interactionId: "starter_" + nanoid(8),
-      createdAt,
-    }).execute();
-
-    createdMessages.push({
-      messageId,
-      speaker: item.speaker,
-      text: item.text,
-      source: "simulation" as const,
-      interactionId: "starter_" + nanoid(8),
-      createdAt: createdAt.toISOString(),
-    });
-  }
-
-  const result = await db.insertInto("simulationSessions").values({
+  const result = await db.sessions.create({
     sessionId,
     world: "living-room",
     clintMood: "reflective",
     maicaMood: "warm",
     currentActivity: "sitting together",
     activeMusic: null,
-  }).returningAll().executeTakeFirstOrThrow();
+  });
+
+  for (let i = 0; i < chosenStarter.length; i++) {
+    const item = chosenStarter[i];
+    const messageId = "msg_" + nanoid(16);
+    const createdAt = new Date(now - (chosenStarter.length - i) * 60000);
+    const interactionId = "starter_" + nanoid(8);
+
+    await db.messages.insert({
+      messageId,
+      sessionId,
+      speaker: item.speaker,
+      text: item.text,
+      source: "simulation",
+      interactionId,
+      createdAt,
+    });
+
+    createdMessages.push({
+      messageId,
+      speaker: item.speaker,
+      text: item.text,
+      source: "simulation" as const,
+      interactionId,
+      createdAt: createdAt.toISOString(),
+    });
+  }
 
   const output: OutputType = {
     sessionId: result.sessionId,

@@ -14,15 +14,12 @@ export async function handle(request: Request): Promise<Response> {
       return new Response(superjson.stringify({ error: "sessionId is required." }), { status: 400 });
     }
 
-    const query = db
-      .selectFrom("simulationMessages")
-      .selectAll()
-      .where("sessionId", "=", sessionId)
-      .$if(Boolean(before), (builder) => builder.where("createdAt", "<", new Date(before!)))
-      .orderBy("createdAt", "desc")
-      .limit(limit + 1);
+    const rows = await db.messages.list({
+      sessionId,
+      before,
+      limit: limit + 1,
+    });
 
-    const rows = await query.execute();
     const hasMore = rows.length > limit;
     const page = rows.slice(0, limit).reverse();
 
@@ -43,8 +40,11 @@ export async function handle(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(superjson.stringify({
-      error: error instanceof Error ? error.message : "Could not load older messages.",
-    }), { status: 500 });
+    return new Response(
+      superjson.stringify({
+        error: error instanceof Error ? error.message : "Could not load older messages.",
+      }),
+      { status: 500 }
+    );
   }
 }

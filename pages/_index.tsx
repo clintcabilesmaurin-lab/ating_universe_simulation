@@ -790,6 +790,8 @@ export default function IndexPage() {
               Session ID: {session?.sessionId.slice(0, 16)}...
               <br />
               Transmissions: {messages.length}
+              <br />
+              Storage: Supabase Cloud Database
             </small>
           </div>
 

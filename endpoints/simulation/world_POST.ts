@@ -15,31 +15,28 @@ export async function handle(request: Request): Promise<Response> {
         ? "Walking into Music World"
         : "Settling into the Living Room";
 
-    let updated = await db.updateTable("simulationSessions")
-      .set({
+    let session = await db.sessions.get(input.sessionId);
+
+    if (session) {
+      await db.sessions.update(input.sessionId, {
         world: input.world,
         currentActivity,
         updatedAt: new Date(),
-      })
-      .where("sessionId", "=", input.sessionId)
-      .returning(["sessionId", "world"])
-      .executeTakeFirst();
-
-    if (!updated) {
-      const created = await db.insertInto("simulationSessions").values({
+      });
+    } else {
+      session = await db.sessions.create({
         sessionId: input.sessionId,
         world: input.world,
         clintMood: "reflective",
         maicaMood: "warm",
         currentActivity,
         activeMusic: null,
-      }).returningAll().executeTakeFirstOrThrow();
-      updated = { sessionId: created.sessionId, world: created.world };
+      });
     }
 
     const output: OutputType = {
-      sessionId: updated.sessionId,
-      world: updated.world as InputType["world"],
+      sessionId: input.sessionId,
+      world: input.world as InputType["world"],
       currentActivity,
     };
 
@@ -52,8 +49,11 @@ export async function handle(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(superjson.stringify({
-      error: error instanceof Error ? error.message : "World update failed.",
-    }), { status: 502 });
+    return new Response(
+      superjson.stringify({
+        error: error instanceof Error ? error.message : "World update failed.",
+      }),
+      { status: 502 }
+    );
   }
 }

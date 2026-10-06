@@ -8,33 +8,26 @@ export async function handle(request: Request): Promise<Response> {
     return new Response(superjson.stringify({ error: "sessionId is required." }), { status: 400 });
   }
 
-  let session = await db.selectFrom("simulationSessions")
-    .selectAll()
-    .where("sessionId", "=", sessionId)
-    .executeTakeFirst();
+  let session = await db.sessions.get(sessionId);
   if (!session) {
-    // Graceful auto-recovery for serverless instances
-    session = await db.insertInto("simulationSessions").values({
+    session = await db.sessions.create({
       sessionId,
       world: "living-room",
       clintMood: "reflective",
       maicaMood: "warm",
       currentActivity: "sitting together",
       activeMusic: null,
-    }).returningAll().executeTakeFirstOrThrow();
+    });
 
-    const starterPairs = [
-      [
-        { speaker: "maica" as const, text: "Skl lovey, para jud tayong compound interest ba 🌱" },
-        { speaker: "clint" as const, text: "Solid ang growth araw-araw... tas pag ikaw ang kahati, mas dodoble pa hahahaha." },
-        { speaker: "maica" as const, text: "Hehe basta nag-unongay ta sa tanan 🤍" },
-      ],
+    const starter = [
+      { speaker: "maica" as const, text: "Skl lovey, para jud tayong compound interest ba 🌱" },
+      { speaker: "clint" as const, text: "Solid ang growth araw-araw... tas pag ikaw ang kahati, mas dodoble pa hahahaha." },
+      { speaker: "maica" as const, text: "Hehe basta nag-unongay ta sa tanan 🤍" },
     ];
-    const starter = starterPairs[0];
     const now = Date.now();
     for (let i = 0; i < starter.length; i++) {
       const item = starter[i];
-      await db.insertInto("simulationMessages").values({
+      await db.messages.insert({
         messageId: "msg_" + Math.random().toString(36).slice(2),
         sessionId,
         speaker: item.speaker,
@@ -42,24 +35,21 @@ export async function handle(request: Request): Promise<Response> {
         source: "simulation",
         interactionId: "starter_" + i,
         createdAt: new Date(now - (starter.length - i) * 60000),
-      }).execute();
+      });
     }
   }
 
   const requestedLimit = new URL(request.url).searchParams.get("limit");
   const parsedLimit = requestedLimit ? Number(requestedLimit) : null;
   const paged = parsedLimit !== null && Number.isFinite(parsedLimit) && parsedLimit > 0;
+  const limit = paged ? Math.min(Math.max(parsedLimit ?? 50, 20), 50) : 50;
 
-  const messages = await db.selectFrom("simulationMessages")
-    .selectAll()
-    .where("sessionId", "=", sessionId)
-    .orderBy("createdAt", "desc")
-    .$if(paged, (builder) => builder.limit(Math.min(Math.max(parsedLimit ?? 50, 20), 50) + 1))
-    .execute();
+  const messages = await db.messages.list({
+    sessionId,
+    limit: limit + 1,
+  });
 
-  const page = paged
-    ? messages.slice(0, Math.min(Math.max(parsedLimit ?? 50, 20), 50)).reverse()
-    : [...messages].reverse();
+  const page = messages.slice(0, limit).reverse();
 
   const output: OutputType = {
     sessionId: session.sessionId,
