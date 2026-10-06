@@ -1,103 +1,167 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Returns the Supabase URL from environment variables.
- * Checks server process.env first, then Vite import.meta.env.
+ * Returns the browser-safe Supabase URL (VITE_SUPABASE_URL).
  */
-export function getSupabaseUrl(): string | undefined {
-  if (typeof process !== "undefined" && process.env) {
-    if (process.env.SUPABASE_URL) return process.env.SUPABASE_URL;
-    if (process.env.VITE_SUPABASE_URL) return process.env.VITE_SUPABASE_URL;
-  }
-  // Vite client bundle access
+export function getBrowserSupabaseUrl(): string | undefined {
   try {
     // @ts-ignore
     if (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) {
       // @ts-ignore
-      return import.meta.env.VITE_SUPABASE_URL;
+      const val = String(import.meta.env.VITE_SUPABASE_URL).trim();
+      if (val.length > 0) return val;
     }
   } catch {}
-  return undefined;
-}
-
-/**
- * Returns the client-safe public Supabase key (anon key).
- * Safe for browser execution.
- */
-export function getSupabaseAnonKey(): string | undefined {
-  if (typeof process !== "undefined" && process.env) {
-    if (process.env.SUPABASE_ANON_KEY) return process.env.SUPABASE_ANON_KEY;
-    if (process.env.VITE_SUPABASE_ANON_KEY) return process.env.VITE_SUPABASE_ANON_KEY;
+  if (typeof process !== "undefined" && process.env?.VITE_SUPABASE_URL) {
+    const val = process.env.VITE_SUPABASE_URL.trim();
+    if (val.length > 0) return val;
   }
-  try {
-    // @ts-ignore
-    if (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) {
-      // @ts-ignore
-      return import.meta.env.VITE_SUPABASE_ANON_KEY;
-    }
-  } catch {}
   return undefined;
 }
 
 /**
- * Returns the privileged server-only Supabase service-role key.
- * CRITICAL: This MUST ONLY be accessed on the server (Node/Vercel serverless).
- * NEVER prefix with VITE_ or expose to the frontend.
+ * Returns the server Supabase URL (SUPABASE_URL or VITE_SUPABASE_URL).
  */
-export function getServerSupabaseKey(): string | undefined {
-  // If in browser, strictly return undefined to prevent credential leaks
+export function getServerSupabaseUrl(): string | undefined {
   if (typeof window !== "undefined") {
     return undefined;
   }
   if (typeof process !== "undefined" && process.env) {
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return process.env.SUPABASE_SERVICE_ROLE_KEY;
-    }
+    const serverUrl = process.env.SUPABASE_URL?.trim();
+    if (serverUrl && serverUrl.length > 0) return serverUrl;
+    const viteUrl = process.env.VITE_SUPABASE_URL?.trim();
+    if (viteUrl && viteUrl.length > 0) return viteUrl;
   }
-  return getSupabaseAnonKey();
+  return undefined;
+}
+
+/**
+ * Returns the Supabase URL for the current execution context.
+ */
+export function getSupabaseUrl(): string | undefined {
+  return typeof window === "undefined"
+    ? getServerSupabaseUrl()
+    : getBrowserSupabaseUrl();
+}
+
+/**
+ * Returns the client-safe public Supabase key (VITE_SUPABASE_ANON_KEY).
+ * Safe for browser execution, but holds NO table privileges on simulation tables.
+ */
+export function getSupabaseAnonKey(): string | undefined {
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) {
+      // @ts-ignore
+      const val = String(import.meta.env.VITE_SUPABASE_ANON_KEY).trim();
+      if (val.length > 0) return val;
+    }
+  } catch {}
+  if (typeof process !== "undefined" && process.env?.VITE_SUPABASE_ANON_KEY) {
+    const val = process.env.VITE_SUPABASE_ANON_KEY.trim();
+    if (val.length > 0) return val;
+  }
+  return undefined;
+}
+
+/**
+ * Returns the privileged server-only Supabase service-role key (SUPABASE_SERVICE_ROLE_KEY).
+ * CRITICAL:
+ * - Strictly server-only (Node / Vercel serverless).
+ * - NEVER falls back to VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY.
+ * - NEVER prefixed with VITE_ or exposed to the browser.
+ */
+export function getServerSupabaseKey(): string | undefined {
+  if (typeof window !== "undefined") {
+    return undefined;
+  }
+  if (typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY) {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY.trim();
+    if (key.length > 0) return key;
+  }
+  return undefined;
+}
+
+export function isServerSupabaseConfigured(): boolean {
+  return Boolean(getServerSupabaseUrl() && getServerSupabaseKey());
+}
+
+export function isBrowserSupabaseConfigured(): boolean {
+  return Boolean(getBrowserSupabaseUrl() && getSupabaseAnonKey());
 }
 
 export function isSupabaseConfigured(): boolean {
-  const url = getSupabaseUrl();
-  const key = getServerSupabaseKey() || getSupabaseAnonKey();
-  return Boolean(url && key && url.trim().length > 0 && key.trim().length > 0);
+  return typeof window === "undefined"
+    ? isServerSupabaseConfigured()
+    : isBrowserSupabaseConfigured();
 }
 
 let cachedServerClient: SupabaseClient<any> | null = null;
-let cachedClientClient: SupabaseClient<any> | null = null;
+let cachedBrowserClient: SupabaseClient<any> | null = null;
 
 /**
- * Get or initialize the Supabase client.
- * Automatically chooses server-privileged or client-safe instance depending on context.
+ * Initializes or returns the browser-safe public Supabase client
+ * using VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY.
+ * Note: Simulation tables revoke anon/authenticated access; all simulation
+ * persistence must go through server API endpoints.
  */
-export function getSupabaseClient(): SupabaseClient<any> | null {
-  const url = getSupabaseUrl();
-  const isServer = typeof window === "undefined";
-  const key = isServer ? getServerSupabaseKey() : getSupabaseAnonKey();
+export function getBrowserSupabaseClient(): SupabaseClient<any> | null {
+  const url = getBrowserSupabaseUrl();
+  const anonKey = getSupabaseAnonKey();
 
-  if (!url || !key) {
+  if (!url || !anonKey) {
     return null;
   }
 
-  if (isServer) {
-    if (!cachedServerClient) {
-      cachedServerClient = createClient(url, key, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-    }
-    return cachedServerClient;
-  } else {
-    if (!cachedClientClient) {
-      cachedClientClient = createClient(url, key, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-      });
-    }
-    return cachedClientClient;
+  if (!cachedBrowserClient) {
+    cachedBrowserClient = createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
   }
+  return cachedBrowserClient;
 }
+
+/**
+ * Initializes or returns the privileged server-only Supabase client
+ * using (SUPABASE_URL or VITE_SUPABASE_URL) + SUPABASE_SERVICE_ROLE_KEY ONLY.
+ * Never downgrades to the anon key.
+ */
+export function getServerSupabaseClient(): SupabaseClient<any> | null {
+  if (typeof window !== "undefined") {
+    throw new Error(
+      "[Supabase] Security violation: getServerSupabaseClient() cannot be invoked in browser context."
+    );
+  }
+
+  const url = getServerSupabaseUrl();
+  const serviceRoleKey = getServerSupabaseKey();
+
+  if (!url || !serviceRoleKey) {
+    return null;
+  }
+
+  if (!cachedServerClient) {
+    cachedServerClient = createClient(url, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+  }
+  return cachedServerClient;
+}
+
+/**
+ * Context-aware helper that delegates to getServerSupabaseClient() on the server
+ * and getBrowserSupabaseClient() in the browser, without ever downgrading server
+ * credentials to the anon key.
+ */
+export function getSupabaseClient(): SupabaseClient<any> | null {
+  return typeof window === "undefined"
+    ? getServerSupabaseClient()
+    : getBrowserSupabaseClient();
+}
+

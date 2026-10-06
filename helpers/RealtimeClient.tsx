@@ -88,8 +88,12 @@ export class RealtimeClient {
     // Connect directly to the realtime API endpoint (the token endpoint returns
     // it). The token rides the query string, so this works cross-origin — no
     // same-origin proxy needed.
-    const sep = creds.wssEndpoint.indexOf("?") === -1 ? "?" : "&";
-    const ws = new WebSocket(creds.wssEndpoint + sep + "token=" + encodeURIComponent(creds.token));
+    let endpoint = creds.wssEndpoint;
+    if (typeof window !== "undefined" && window.location.protocol === "https:" && endpoint.startsWith("ws://")) {
+      endpoint = "wss://" + endpoint.slice(5);
+    }
+    const sep = endpoint.indexOf("?") === -1 ? "?" : "&";
+    const ws = new WebSocket(endpoint + sep + "token=" + encodeURIComponent(creds.token));
     this.ws = ws;
     ws.onopen = () => {
       this.delay = 500;

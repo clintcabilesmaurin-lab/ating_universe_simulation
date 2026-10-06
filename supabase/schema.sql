@@ -52,34 +52,48 @@ create index if not exists idx_sim_memories_category
   on simulation_memories (memory_category);
 
 -- ============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- SECURITY ARCHITECTURE & PRIVILEGE MODEL (SERVER-ONLY PERSISTENCE)
 -- ============================================================================
+-- Live Project Reference: hegfswsqohbfkrwvczzu
+--
+-- Architecture:
+--   Browser / React -> Vercel API endpoints -> Server-side Supabase client
+--   (SUPABASE_SERVICE_ROLE_KEY) -> Supabase PostgreSQL
+--
+-- Authoritative Privilege Matrix:
+--   anon:          SELECT = false, INSERT = false, UPDATE = false
+--   authenticated: SELECT = false, INSERT = false, UPDATE = false
+--   service_role:  SELECT = true,  INSERT = true,  UPDATE = true
+--
+-- Direct browser access to simulation tables is intentionally prohibited.
+-- Row Level Security (RLS) is enabled on all simulation tables with zero
+-- permissive policies for anon/authenticated roles, and table-level privileges
+-- are revoked from anon and authenticated roles. Only the trusted server-side
+-- service_role (which bypasses RLS) is permitted to read or mutate these tables.
+-- ============================================================================
+
 alter table simulation_sessions enable row level security;
 alter table simulation_messages enable row level security;
 alter table simulation_memories enable row level security;
 
--- Public observatory read/write policies (anon key + service role)
+-- Ensure any legacy public browser policies are removed
 drop policy if exists "Public sessions select" on simulation_sessions;
-create policy "Public sessions select" on simulation_sessions for select using (true);
-
 drop policy if exists "Public sessions insert" on simulation_sessions;
-create policy "Public sessions insert" on simulation_sessions for insert with check (true);
-
 drop policy if exists "Public sessions update" on simulation_sessions;
-create policy "Public sessions update" on simulation_sessions for update using (true);
-
--- Public messages policies: public users can read, and insert their own transmissions (source = 'user')
 drop policy if exists "Public messages select" on simulation_messages;
-create policy "Public messages select" on simulation_messages for select using (true);
-
 drop policy if exists "Public messages insert" on simulation_messages;
-create policy "Public messages insert" on simulation_messages for insert with check (source = 'user');
-
--- Public memories policies: read-only for public observatory. Mutated only by service role.
 drop policy if exists "Public memories select" on simulation_memories;
-create policy "Public memories select" on simulation_memories for select using (true);
-
 drop policy if exists "Public memories insert" on simulation_memories;
+
+-- Revoke all direct table privileges from browser-exposed roles
+revoke all on table simulation_sessions from anon, authenticated;
+revoke all on table simulation_messages from anon, authenticated;
+revoke all on table simulation_memories from anon, authenticated;
+
+-- Grant explicit read/write privileges exclusively to the server-side service_role
+grant select, insert, update on table simulation_sessions to service_role;
+grant select, insert, update on table simulation_messages to service_role;
+grant select, insert, update on table simulation_memories to service_role;
 
 -- ============================================================================
 -- SEED DATA: SHARED MEMORIES & CANONICAL LORE

@@ -13,7 +13,13 @@ export const getSimulationSession = async (
     method: "GET",
   });
   if (!result.ok) {
-    throw new Error(`Failed to load simulation session: ${result.statusText}`);
+    const errorText = await result.text();
+    let message = `Failed to load simulation session: ${result.statusText}`;
+    try {
+      const err = superjson.parse<{ error?: string }>(errorText);
+      if (err?.error) message = err.error;
+    } catch {}
+    throw new Error(message);
   }
   const text = await result.text();
   return superjson.parse<OutputType>(text);

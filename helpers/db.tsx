@@ -1,4 +1,8 @@
-import { getSupabaseClient } from "./supabase";
+import {
+  getServerSupabaseClient,
+  getServerSupabaseUrl,
+  getServerSupabaseKey,
+} from "./supabase";
 import type {
   SimulationSession,
   SimulationMessage,
@@ -8,11 +12,29 @@ import type {
   SupabaseMemoryRow,
 } from "./schema";
 
-function requireClient() {
-  const client = getSupabaseClient();
+function requireServerClient() {
+  if (typeof window !== "undefined") {
+    throw new Error(
+      "[Supabase] Direct browser database access is forbidden. Simulation persistence must be routed through server API endpoints."
+    );
+  }
+
+  const url = getServerSupabaseUrl();
+  const serviceKey = getServerSupabaseKey();
+
+  if (!url || !serviceKey) {
+    const missing: string[] = [];
+    if (!url) missing.push("VITE_SUPABASE_URL (or SUPABASE_URL)");
+    if (!serviceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    throw new Error(
+      `[Supabase] Server database client unavailable. Missing required server environment variable(s): ${missing.join(", ")}.`
+    );
+  }
+
+  const client = getServerSupabaseClient();
   if (!client) {
     throw new Error(
-      "[Supabase] Database client unavailable. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or SUPABASE_SERVICE_ROLE_KEY) are configured."
+      "[Supabase] Failed to initialize server-side Supabase client."
     );
   }
   return client;
@@ -60,13 +82,14 @@ function toMemory(row: SupabaseMemoryRow): SimulationMemory {
 }
 
 /**
- * Thin Supabase Data Access Layer:
- * Direct connection to Supabase tables. No local/in-memory fallback persistence.
+ * Thin Server-Only Supabase Data Access Layer:
+ * Connects exclusively via SUPABASE_SERVICE_ROLE_KEY on the server.
+ * No in-memory database, no fallback persistence, and no direct browser table access.
  */
 export const db = {
   sessions: {
     async get(sessionId: string): Promise<SimulationSession | null> {
-      const client = requireClient();
+      const client = requireServerClient();
       const { data, error } = await client
         .from("simulation_sessions")
         .select("*")
@@ -77,7 +100,7 @@ export const db = {
     },
 
     async getLatest(): Promise<SimulationSession | null> {
-      const client = requireClient();
+      const client = requireServerClient();
       const { data, error } = await client
         .from("simulation_sessions")
         .select("*")
@@ -91,7 +114,7 @@ export const db = {
     async create(
       input: Partial<SimulationSession> & { sessionId: string }
     ): Promise<SimulationSession> {
-      const client = requireClient();
+      const client = requireServerClient();
       const now = new Date();
       const row: SupabaseSessionRow = {
         session_id: input.sessionId,
@@ -111,7 +134,7 @@ export const db = {
 
       const { data, error } = await client
         .from("simulation_sessions")
-        .upsert(row, { onConflict: "session_id" })
+        .upsert(row as any, { onConflict: "session_id" })
         .select("*")
         .single();
       if (error) throw error;
@@ -122,7 +145,7 @@ export const db = {
       sessionId: string,
       updates: Partial<SimulationSession>
     ): Promise<SimulationSession | null> {
-      const client = requireClient();
+      const client = requireServerClient();
       const now = new Date();
       const rowUpdates: Partial<SupabaseSessionRow> = {
         updated_at: now.toISOString(),
@@ -145,7 +168,7 @@ export const db = {
 
       const { data, error } = await client
         .from("simulation_sessions")
-        .update(rowUpdates)
+        .update(rowUpdates as any)
         .eq("session_id", sessionId)
         .select("*")
         .single();
@@ -160,7 +183,7 @@ export const db = {
       before?: string | null;
       limit?: number;
     }): Promise<SimulationMessage[]> {
-      const client = requireClient();
+      const client = requireServerClient();
       const limit = params.limit ?? 50;
       let query = client
         .from("simulation_messages")
@@ -199,7 +222,7 @@ export const db = {
             createdAt?: Date;
           }
     ): Promise<void> {
-      const client = requireClient();
+      const client = requireServerClient();
       const rawList = Array.isArray(items) ? items : [items];
       if (rawList.length === 0) return;
 
@@ -213,14 +236,14 @@ export const db = {
         created_at: (item.createdAt ?? new Date()).toISOString(),
       }));
 
-      const { error } = await client.from("simulation_messages").insert(rows);
+      const { error } = await client.from("simulation_messages").insert(rows as any);
       if (error) throw error;
     },
   },
 
   memories: {
     async list(): Promise<SimulationMemory[]> {
-      const client = requireClient();
+      const client = requireServerClient();
       const { data, error } = await client
         .from("simulation_memories")
         .select("*")
@@ -230,3 +253,5 @@ export const db = {
     },
   },
 };
+
+

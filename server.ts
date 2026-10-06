@@ -95,7 +95,12 @@ app.use("/_api", express.text({ type: "*/*" }), async (req, res) => {
 
   try {
     const host = req.get("host") || "localhost:3000";
-    const fullUrl = `${req.protocol}://${host}${req.originalUrl}`;
+    const forwardedProto = req.headers["x-forwarded-proto"];
+    const protocol =
+      typeof forwardedProto === "string"
+        ? forwardedProto.split(",")[0].trim()
+        : req.protocol;
+    const fullUrl = `${protocol}://${host}${req.originalUrl}`;
     const headers = new Headers();
     for (const [k, v] of Object.entries(req.headers)) {
       if (v) {
