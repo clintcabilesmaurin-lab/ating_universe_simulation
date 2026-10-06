@@ -10,6 +10,7 @@ import {
   X,
   Shuffle,
   ExternalLink,
+  Search,
 } from "lucide-react";
 import type { MusicTrack } from "../../helpers/musicLibrary";
 import type { useYouTubePlayer } from "../../helpers/useYouTubePlayer";
@@ -17,24 +18,22 @@ import type { useYouTubePlayer } from "../../helpers/useYouTubePlayer";
 export type MusicCategory =
   | "all"
   | "pop"
+  | "soft-rock"
   | "indie"
-  | "acoustic"
-  | "lofi"
-  | "ambient"
-  | "rnb"
-  | "gospel"
-  | "rock";
+  | "jazz"
+  | "cinematic"
+  | "opm"
+  | "emo";
 
 export const MUSIC_CATEGORIES: { id: MusicCategory; label: string; icon: string }[] = [
-  { id: "all", label: "All Sounds", icon: "✦" },
-  { id: "pop", label: "Contemporary Pop", icon: "🌤️" },
-  { id: "indie", label: "Indie / Folk", icon: "🌿" },
-  { id: "acoustic", label: "Acoustic / Warm", icon: "🎸" },
-  { id: "lofi", label: "Lo-Fi / Study", icon: "☕" },
-  { id: "ambient", label: "Ambient / Night", icon: "🌙" },
-  { id: "rnb", label: "Soul / R&B", icon: "🍷" },
-  { id: "gospel", label: "Faith / Acoustic", icon: "🕊️" },
-  { id: "rock", label: "Alt / Indie Rock", icon: "⚡" },
+  { id: "all", label: "All Sounds (69)", icon: "✦" },
+  { id: "pop", label: "Pop / Contemporary (16)", icon: "🌤️" },
+  { id: "soft-rock", label: "Soft Rock / Adult Cont. (6)", icon: "💿" },
+  { id: "indie", label: "Indie / Alternative (5)", icon: "🌿" },
+  { id: "jazz", label: "Jazz / Bossa (13)", icon: "☕" },
+  { id: "cinematic", label: "Cinematic Romance (4)", icon: "🎬" },
+  { id: "opm", label: "Filipino / OPM (14)", icon: "🇵🇭" },
+  { id: "emo", label: "Emo / Pop-Punk (11)", icon: "🌧️" },
 ];
 
 export type UseYouTubePlayerResult = ReturnType<typeof useYouTubePlayer>;
@@ -74,17 +73,24 @@ export function MusicDrawer({
   maicaReaction,
 }: MusicDrawerProps) {
   const [category, setCategory] = useState<MusicCategory>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(70);
 
   if (!isOpen) return null;
 
-  const tracks =
-    category === "all"
-      ? musicLibrary
-      : musicLibrary.filter(
-          (t) => t.genre === category || t.roomIds.includes(category)
-        );
+  const filteredTracks = musicLibrary.filter((t) => {
+    const matchesCategory =
+      category === "all" || t.genre === category || t.roomIds.includes(category);
+    if (!matchesCategory) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      t.title.toLowerCase().includes(q) ||
+      t.artist.toLowerCase().includes(q) ||
+      t.tags.some((tag) => tag.toLowerCase().includes(q))
+    );
+  });
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -104,6 +110,16 @@ export function MusicDrawer({
     }
   };
 
+  const GENRE_SECTIONS: { id: MusicCategory; label: string; icon: string; count: number }[] = [
+    { id: "pop", label: "Pop / Contemporary Pop", icon: "🌤️", count: 16 },
+    { id: "soft-rock", label: "Soft Rock / Adult Contemporary", icon: "💿", count: 6 },
+    { id: "indie", label: "Indie / Alternative / Indie Pop", icon: "🌿", count: 5 },
+    { id: "jazz", label: "Jazz / Jazz-Pop / Bossa-Inspired", icon: "☕", count: 13 },
+    { id: "cinematic", label: "Musical / Cinematic Romance", icon: "🎬", count: 4 },
+    { id: "opm", label: "Filipino / OPM", icon: "🇵🇭", count: 14 },
+    { id: "emo", label: "Emo / Pop-Punk / Alternative Emo", icon: "🌧️", count: 11 },
+  ];
+
   return (
     <div
       style={{
@@ -111,8 +127,8 @@ export function MusicDrawer({
         top: 0,
         right: 0,
         bottom: "44px",
-        width: "min(460px, 94vw)",
-        background: "rgba(8, 10, 15, 0.94)",
+        width: "min(480px, 94vw)",
+        background: "rgba(8, 10, 15, 0.96)",
         backdropFilter: "blur(28px)",
         borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
         zIndex: 50,
@@ -129,6 +145,7 @@ export function MusicDrawer({
           alignItems: "center",
           padding: "16px 20px",
           borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          flexShrink: 0,
         }}
       >
         <div>
@@ -175,12 +192,135 @@ export function MusicDrawer({
         </button>
       </div>
 
+      {/* Pinned Category Navigation & Search */}
+      <div
+        style={{
+          padding: "12px 18px",
+          background: "rgba(13, 17, 24, 0.98)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8a96a8", fontWeight: 600 }}>
+            GENRE CATEGORIES (7 SECTIONS · 69 TRACKS)
+          </span>
+          {category !== "all" && (
+            <button
+              type="button"
+              onClick={() => setCategory("all")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#5ac8fa",
+                fontSize: "9px",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              Show All (69)
+            </button>
+          )}
+        </div>
+
+        {/* Category Pills Slider */}
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            overflowX: "auto",
+            paddingBottom: "4px",
+            scrollbarWidth: "none",
+          }}
+        >
+          {MUSIC_CATEGORIES.map((item) => {
+            const isActive = category === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setCategory(item.id)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  background: isActive ? "rgba(90, 200, 250, 0.2)" : "rgba(255, 255, 255, 0.04)",
+                  border: isActive ? "1px solid #5ac8fa" : "1px solid rgba(255, 255, 255, 0.08)",
+                  color: isActive ? "#ffffff" : "#9ba8ba",
+                  padding: "5px 10px",
+                  borderRadius: "3px",
+                  fontSize: "10.5px",
+                  fontWeight: isActive ? 600 : 400,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s ease",
+                  boxShadow: isActive ? "0 0 10px rgba(90, 200, 250, 0.3)" : "none",
+                }}
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search Filter */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "3px",
+            padding: "5px 8px",
+          }}
+        >
+          <Search size={12} color="#748092" />
+          <input
+            type="text"
+            placeholder="Search 69 soundtracks, artists, or lyrics..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "#ffffff",
+              fontSize: "11px",
+              width: "100%",
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#748092",
+                cursor: "pointer",
+                padding: "0 2px",
+                fontSize: "11px",
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Content scroll area */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "18px 20px",
+          padding: "16px 20px",
           display: "flex",
           flexDirection: "column",
           gap: "16px",
@@ -438,8 +578,8 @@ export function MusicDrawer({
           <button
             type="button"
             onClick={() => {
-              if (tracks.length === 0) return;
-              const random = tracks[Math.floor(Math.random() * tracks.length)];
+              if (filteredTracks.length === 0) return;
+              const random = filteredTracks[Math.floor(Math.random() * filteredTracks.length)];
               if (random) void onSelectTrack(random.id);
             }}
             style={{
@@ -496,118 +636,275 @@ export function MusicDrawer({
           </div>
         </div>
 
-        {/* Category Filters */}
-        <div
-          style={{
-            display: "flex",
-            gap: "5px",
-            overflowX: "auto",
-            paddingBottom: "4px",
-            scrollbarWidth: "none",
-          }}
-        >
-          {MUSIC_CATEGORIES.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setCategory(item.id)}
-              style={{
-                background:
-                  category === item.id ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.03)",
-                border:
-                  category === item.id
-                    ? "1px solid rgba(255, 255, 255, 0.25)"
-                    : "1px solid rgba(255, 255, 255, 0.06)",
-                color: category === item.id ? "#ffffff" : "#748092",
-                padding: "3px 8px",
-                borderRadius: "2px",
-                fontSize: "8.5px",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                fontFamily: "inherit",
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Track List */}
+        {/* Track List Section */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "6px",
+            gap: "14px",
           }}
         >
-          {tracks.map((track) => {
-            const isSelected = activeTrack?.id === track.id;
-            return (
+          {filteredTracks.length === 0 ? (
+            <div
+              style={{
+                padding: "24px 16px",
+                textAlign: "center",
+                color: "#748092",
+                fontSize: "12px",
+                background: "rgba(255, 255, 255, 0.02)",
+                borderRadius: "3px",
+              }}
+            >
+              No soundtracks found matching "{searchQuery}".
+              <br />
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setCategory("all");
+                }}
+                style={{
+                  marginTop: "8px",
+                  background: "transparent",
+                  border: "none",
+                  color: "#5ac8fa",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                }}
+              >
+                Clear filter & show all 69 tracks
+              </button>
+            </div>
+          ) : category === "all" && !searchQuery ? (
+            // Grouped by the 7 categories
+            GENRE_SECTIONS.map((sec) => {
+              const secTracks = musicLibrary.filter((t) => t.genre === sec.id);
+              if (secTracks.length === 0) return null;
+              return (
+                <div key={sec.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "5px 10px",
+                      background: "rgba(255, 255, 255, 0.035)",
+                      borderLeft: "2px solid #5ac8fa",
+                      borderRadius: "2px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "12px" }}>{sec.icon}</span>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          color: "#f0f3f8",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {sec.label}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCategory(sec.id)}
+                      style={{
+                        fontSize: "9px",
+                        color: "#5ac8fa",
+                        background: "rgba(90, 200, 250, 0.1)",
+                        border: "1px solid rgba(90, 200, 250, 0.25)",
+                        padding: "2px 8px",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {secTracks.length} tracks
+                    </button>
+                  </div>
+
+                  {secTracks.map((track) => {
+                    const isSelected = activeTrack?.id === track.id;
+                    return (
+                      <div
+                        key={track.id}
+                        onClick={() => void onSelectTrack(track.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "6px 10px",
+                          background: isSelected
+                            ? "rgba(90, 200, 250, 0.1)"
+                            : "rgba(255, 255, 255, 0.015)",
+                          border: isSelected
+                            ? "1px solid rgba(90, 200, 250, 0.35)"
+                            : "1px solid rgba(255, 255, 255, 0.04)",
+                          borderRadius: "2px",
+                          cursor: "pointer",
+                          transition: "background 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                          <img
+                            src={track.coverImage}
+                            alt=""
+                            style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "2px", flexShrink: 0 }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontSize: "11px",
+                                color: isSelected ? "#ffffff" : "#dde3ec",
+                                fontWeight: isSelected ? 600 : 400,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {track.title}
+                            </div>
+                            <div style={{ fontSize: "9px", color: "#6c7787" }}>
+                              {track.artist} · {track.genre}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                          {isSelected && (
+                            <span style={{ fontSize: "9px", color: "#5ac8fa", fontWeight: 600 }}>
+                              {isPlaying ? "PLAYING" : "PAUSED"}
+                            </span>
+                          )}
+                          <a
+                            href={`https://www.youtube.com/watch?v=${track.youtubeId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ color: "#545e6d", padding: "2px" }}
+                            title="Open on YouTube"
+                          >
+                            <ExternalLink size={11} />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })
+          ) : (
+            // Filtered view (either by single category or search)
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <div
-                key={track.id}
-                onClick={() => void onSelectTrack(track.id)}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "6px 10px",
-                  background: isSelected
-                    ? "rgba(90, 200, 250, 0.08)"
-                    : "rgba(255, 255, 255, 0.015)",
-                  border: isSelected
-                    ? "1px solid rgba(90, 200, 250, 0.3)"
-                    : "1px solid rgba(255, 255, 255, 0.05)",
+                  padding: "5px 10px",
+                  background: "rgba(255, 255, 255, 0.035)",
+                  borderLeft: "2px solid #5ac8fa",
                   borderRadius: "2px",
-                  cursor: "pointer",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                  <img
-                    src={track.coverImage}
-                    alt=""
-                    style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "2px" }}
-                  />
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: isSelected ? "#ffffff" : "#dde3ec",
-                        fontWeight: isSelected ? 500 : 400,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {track.title}
+                <span
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "#f0f3f8",
+                    fontWeight: 600,
+                  }}
+                >
+                  {category !== "all"
+                    ? `${MUSIC_CATEGORIES.find((c) => c.id === category)?.icon} ${
+                        MUSIC_CATEGORIES.find((c) => c.id === category)?.label
+                      }`
+                    : `Search Results (${filteredTracks.length})`}
+                </span>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    color: "#748092",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                  }}
+                >
+                  {filteredTracks.length} tracks
+                </span>
+              </div>
+
+              {filteredTracks.map((track) => {
+                const isSelected = activeTrack?.id === track.id;
+                return (
+                  <div
+                    key={track.id}
+                    onClick={() => void onSelectTrack(track.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 10px",
+                      background: isSelected
+                        ? "rgba(90, 200, 250, 0.1)"
+                        : "rgba(255, 255, 255, 0.015)",
+                      border: isSelected
+                        ? "1px solid rgba(90, 200, 250, 0.35)"
+                        : "1px solid rgba(255, 255, 255, 0.04)",
+                      borderRadius: "2px",
+                      cursor: "pointer",
+                      transition: "background 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                      <img
+                        src={track.coverImage}
+                        alt=""
+                        style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "2px", flexShrink: 0 }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: isSelected ? "#ffffff" : "#dde3ec",
+                            fontWeight: isSelected ? 600 : 400,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {track.title}
+                        </div>
+                        <div style={{ fontSize: "9px", color: "#6c7787" }}>
+                          {track.artist} · {track.genre}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: "9px", color: "#6c7787" }}>
-                      {track.artist} · {track.genre}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                      {isSelected && (
+                        <span style={{ fontSize: "9px", color: "#5ac8fa", fontWeight: 600 }}>
+                          {isPlaying ? "PLAYING" : "PAUSED"}
+                        </span>
+                      )}
+                      <a
+                        href={`https://www.youtube.com/watch?v=${track.youtubeId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ color: "#545e6d", padding: "2px" }}
+                        title="Open on YouTube"
+                      >
+                        <ExternalLink size={11} />
+                      </a>
                     </div>
                   </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-                  {isSelected && (
-                    <span style={{ fontSize: "9px", color: "#5ac8fa", fontWeight: 600 }}>
-                      {isPlaying ? "PLAYING" : "PAUSED"}
-                    </span>
-                  )}
-                  <a
-                    href={`https://www.youtube.com/watch?v=${track.youtubeId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ color: "#545e6d", padding: "2px" }}
-                    title="Open on YouTube"
-                  >
-                    <ExternalLink size={11} />
-                  </a>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

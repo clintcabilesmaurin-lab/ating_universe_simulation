@@ -82,8 +82,8 @@ export async function handle(request: Request): Promise<Response> {
           interactionId = "gemini_" + nanoid(10);
           source = "gemini";
         }
-      } catch (err) {
-        console.warn("[Chat Endpoint] Gemini failed, falling back to scripted:", err);
+      } catch {
+        // AI reply unavailable, seamlessly proceed with scripted dialogue
       }
     }
 

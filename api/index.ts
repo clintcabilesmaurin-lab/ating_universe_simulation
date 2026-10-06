@@ -35,6 +35,7 @@ const routes: Record<
   },
   "/_api/simulation/engine-status": {
     GET: engineGET.handle,
+    POST: engineGET.handle,
   },
   "/_api/_realtime/token": {
     POST: tokenPOST.handle,

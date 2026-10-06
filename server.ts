@@ -77,6 +77,7 @@ const routes: Record<string, Record<string, (req: Request) => Promise<Response>>
   },
   "/_api/simulation/engine-status": {
     GET: engineGET.handle,
+    POST: engineGET.handle,
   },
   "/_api/_realtime/token": {
     POST: tokenPOST.handle,

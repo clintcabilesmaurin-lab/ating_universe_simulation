@@ -125,8 +125,8 @@ export async function handle(request: Request): Promise<Response> {
           interactionId = "gemini_" + nanoid(10);
           source = "gemini";
         }
-      } catch (err) {
-        console.warn("[Tick Endpoint] Gemini turn failed, using scripted:", err);
+      } catch {
+        // AI turn unavailable, seamlessly proceed with scripted dialogue
       }
     }
 

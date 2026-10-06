@@ -14,6 +14,45 @@
       "maicaInteractionId": null,
       "createdAt": "2026-09-24T02:24:44.526Z",
       "updatedAt": "2026-09-24T02:24:44.772Z"
+    },
+    "sim_RH8tOpkkesjqbQIK": {
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "world": "music-room",
+      "clintMood": "reflective",
+      "maicaMood": "warm",
+      "currentActivity": "Maica is speaking · weekday responsibilities",
+      "activeMusic": "track-opm-06",
+      "activeEvent": null,
+      "eventExpiresAt": null,
+      "eventCooldowns": {
+        "threadUsed:morning-skl": "2026-09-30T00:33:10.609Z",
+        "lastConversationTopic": "family"
+      },
+      "clintInteractionId": "scripted_5k5XbjlcN4",
+      "maicaInteractionId": "scripted_Ny3g12Bk7y",
+      "createdAt": "2026-09-30T00:32:52.369Z",
+      "updatedAt": "2026-09-30T00:36:45.447Z"
+    },
+    "test-session-id": {
+      "sessionId": "test-session-id",
+      "world": "living-room",
+      "clintMood": "reflective",
+      "maicaMood": "warm",
+      "currentActivity": "Clint is speaking · Water shortage",
+      "activeMusic": null,
+      "activeEvent": "water_shortage",
+      "eventExpiresAt": "2026-09-30T00:58:01.686Z",
+      "eventCooldowns": {
+        "water_shortage": "2026-09-30T00:38:01.686Z",
+        "conversationThreadId": "event-water-shortage",
+        "conversationThreadStep": "1",
+        "threadUsed:event-water-shortage": "2026-09-30T00:38:01.686Z",
+        "lastConversationTopic": "motorcycle"
+      },
+      "clintInteractionId": "scripted_QvcJDI5b0J",
+      "maicaInteractionId": null,
+      "createdAt": "2026-09-30T00:38:01.686Z",
+      "updatedAt": "2026-09-30T00:38:01.708Z"
     }
   },
   "messages": [
@@ -34,6 +73,105 @@
       "source": "simulation",
       "interactionId": "scripted_fqLOf2KUYY",
       "createdAt": "2026-09-24T02:24:44.772Z"
+    },
+    {
+      "messageId": "msg_zsxhycjss2",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Skl lovey, para jud tayong compound interest ba 🌱",
+      "source": "simulation",
+      "interactionId": "starter_0",
+      "createdAt": "2026-09-30T00:29:52.369Z"
+    },
+    {
+      "messageId": "msg_1n4om4nk2kv",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "clint",
+      "text": "Solid ang growth araw-araw... tas pag ikaw ang kahati, mas dodoble pa hahahaha.",
+      "source": "simulation",
+      "interactionId": "starter_1",
+      "createdAt": "2026-09-30T00:30:52.369Z"
+    },
+    {
+      "messageId": "msg_o6gqno2sjr9",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Hehe basta nag-unongay ta sa tanan 🤍",
+      "source": "simulation",
+      "interactionId": "starter_2",
+      "createdAt": "2026-09-30T00:31:52.369Z"
+    },
+    {
+      "messageId": "msg_tAm4RHcJM8M5blhc",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Skl lovey, busy mi gamay diri karon hehe",
+      "source": "simulation",
+      "interactionId": "scripted_kZ7nBHAOmE",
+      "createdAt": "2026-09-30T00:33:10.649Z"
+    },
+    {
+      "messageId": "msg_VDTl8BOmYPdsZv6d",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "clint",
+      "text": "Unsay gi-busyhan ninyo?",
+      "source": "simulation",
+      "interactionId": "scripted_ZhfWYKDLtD",
+      "createdAt": "2026-09-30T00:33:19.343Z"
+    },
+    {
+      "messageId": "msg_WFfcOML2HbE0dRBd",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Nag-andam sa mga bata, naa pud koy gamay buhaton sa balay.",
+      "source": "simulation",
+      "interactionId": "scripted_mJv1gTK1UW",
+      "createdAt": "2026-09-30T00:33:31.109Z"
+    },
+    {
+      "messageId": "msg__OmFl9mGocbTV__j",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "clint",
+      "text": "70s vintage soul-rock revival at its finest. Huge vocal dynamics, analog organs, and making sure that the final chapter is filled with grace.",
+      "source": "simulation",
+      "interactionId": "music_track-softrock-06_1790728419868",
+      "createdAt": "2026-09-30T00:33:39.868Z"
+    },
+    {
+      "messageId": "msg_VIzVEjN9taBtsO6F",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "clint",
+      "text": "Ahh okay. Hinay-hinay lang diha ha.",
+      "source": "simulation",
+      "interactionId": "scripted_5k5XbjlcN4",
+      "createdAt": "2026-09-30T00:34:53.978Z"
+    },
+    {
+      "messageId": "msg_lTzukyjUB1KYDaRa",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Grabe ang vocals! Makahilak kadiyot sa ka-heartfelt. Beautiful interpretation jud nga puno ug emosyon. 🤎🎤",
+      "source": "simulation",
+      "interactionId": "music_track-opm-06_1790728501897",
+      "createdAt": "2026-09-30T00:35:01.897Z"
+    },
+    {
+      "messageId": "msg_Cfcfl3m95HeG6Gz5",
+      "sessionId": "sim_RH8tOpkkesjqbQIK",
+      "speaker": "maica",
+      "text": "Oo mylabs hehe ikaw sad, ayaw puro buhat.",
+      "source": "simulation",
+      "interactionId": "scripted_Ny3g12Bk7y",
+      "createdAt": "2026-09-30T00:36:45.447Z"
+    },
+    {
+      "messageId": "msg__Y_ce6hFLWLIdmkg",
+      "sessionId": "test-session-id",
+      "speaker": "clint",
+      "text": "Mag-sag-ob diay mi ron lovey, pila na ka adlaw walay agas diri 😅",
+      "source": "simulation",
+      "interactionId": "scripted_QvcJDI5b0J",
+      "createdAt": "2026-09-30T00:38:01.708Z"
     }
   ],
   "memories": [
@@ -183,6 +321,144 @@
         "tease"
       ],
       "createdAt": "2024-09-18T21:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_julies_bakery",
+      "memoryCategory": "foundational_milestone",
+      "title": "Julie's Bakeshop Tungkop Meeting — May 31, 2026",
+      "description": "The post-church turning point where pity was distinguished from genuine love, affirming that what they had was worth fighting for, followed by kan-on ug gatas and matching profile pictures.",
+      "keywords": [
+        "julie",
+        "tungkop",
+        "bakeshop",
+        "bakery",
+        "may 31",
+        "gatas",
+        "kan-on",
+        "pity",
+        "love",
+        "profile picture"
+      ],
+      "createdAt": "2026-05-31T12:30:00.000Z"
+    },
+    {
+      "memoryId": "mem_dalaguete_run",
+      "memoryCategory": "family_personal_life",
+      "title": "5:21 AM Dalaguete Vegetable Run with Papa",
+      "description": "Early morning father-and-son motorcycle journey through Osmeña Peak fog to purchase wholesale vegetables; learning resilience and discovering deep empathy for his father's sacrifices.",
+      "keywords": [
+        "dalaguete",
+        "osmena",
+        "fog",
+        "papa",
+        "utan",
+        "vegetables",
+        "motorcycle",
+        "ride",
+        "training"
+      ],
+      "createdAt": "2024-10-04T05:21:00.000Z"
+    },
+    {
+      "memoryId": "mem_compound_interest",
+      "memoryCategory": "relational_concept",
+      "title": "Compound Interest of Love and Memories",
+      "description": "Maica and Clint's shared understanding that their love, trust, and memories grow exponentially each day like compound interest.",
+      "keywords": [
+        "compound interest",
+        "growth",
+        "exponential",
+        "tiwala",
+        "pagmamahal",
+        "memories",
+        "future"
+      ],
+      "createdAt": "2024-11-12T20:15:00.000Z"
+    },
+    {
+      "memoryId": "mem_t9_ciphers",
+      "memoryCategory": "digital_landmark",
+      "title": "T9 Keypad Ciphers & Meta AI C Code",
+      "description": "Clint's creative codes: 222-88-8-33 6-66 ('CUTE MO'), 555-666-888-33-999 ('I LOVE YOU'), and bool loveBaAkoniLovey Meta AI tests.",
+      "keywords": [
+        "cipher",
+        "binary",
+        "t9",
+        "nokia",
+        "cute mo",
+        "meta ai",
+        "c code",
+        "programming"
+      ],
+      "createdAt": "2024-11-28T22:00:00.000Z"
+    },
+    {
+      "memoryId": "mem_maica_laundry_soup",
+      "memoryCategory": "family_personal_life",
+      "title": "Eldest Sister Care & Kamunggay Chicken Soup",
+      "description": "Maica putting younger siblings to sleep in her arms, enduring Zonrox laundry mornings, and lovingly cooking chicken tinola with fresh kamunggay for her mother.",
+      "keywords": [
+        "laundry",
+        "zonrox",
+        "kamunggay",
+        "tinola",
+        "ate",
+        "siblings",
+        "mama",
+        "caring",
+        "laba"
+      ],
+      "createdAt": "2024-12-05T18:30:00.000Z"
+    },
+    {
+      "memoryId": "mem_romans_faith",
+      "memoryCategory": "scriptural_bedrock",
+      "title": "Romans 8:1 Freedom & Ministry of God",
+      "description": "Clint reassuring Maica through Romans 8:1, dispelling superstitious gossip and standing firm in the one True God.",
+      "keywords": [
+        "romans",
+        "romans 8:1",
+        "faith",
+        "gaba",
+        "superstition",
+        "god",
+        "minister",
+        "peace"
+      ],
+      "createdAt": "2025-01-14T19:45:00.000Z"
+    },
+    {
+      "memoryId": "mem_homestead_vision",
+      "memoryCategory": "future_homestead",
+      "title": "Countryside Homestead & Stargazing Telescope",
+      "description": "Their shared peaceful future: a cool mountain homestead with automated systems, telescope for stargazing, vegetable garden of tomatoes and eggplants, and domestic warmth.",
+      "keywords": [
+        "homestead",
+        "countryside",
+        "telescope",
+        "stargazing",
+        "bukid",
+        "garden",
+        "future",
+        "solar"
+      ],
+      "createdAt": "2025-02-20T21:10:00.000Z"
+    },
+    {
+      "memoryId": "mem_digital_vault",
+      "memoryCategory": "digital_landmark",
+      "title": "Memory Case & The Digital Memory Vault",
+      "description": "Clint's web projects including the Canva Mansion, Memory Case web game, 3D Memory Gallery Walk, and Secret Letter portal.",
+      "keywords": [
+        "memory case",
+        "canva mansion",
+        "gallery walk",
+        "secret letter",
+        "great before",
+        "game",
+        "code"
+      ],
+      "createdAt": "2025-03-01T20:00:00.000Z"
     }
   ]
 }
