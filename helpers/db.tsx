@@ -2,7 +2,7 @@ import {
   getServerSupabaseClient,
   getServerSupabaseUrl,
   getServerSupabaseKey,
-} from "./supabase";
+} from "./supabase.js";
 import type {
   SimulationSession,
   SimulationMessage,
