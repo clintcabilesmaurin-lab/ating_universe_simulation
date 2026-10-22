@@ -1,12 +1,12 @@
-import * as sessionPOST from "../endpoints/simulation/session_POST";
-import * as sessionGET from "../endpoints/simulation/session_GET";
-import * as chatPOST from "../endpoints/simulation/chat_POST";
-import * as messagesGET from "../endpoints/simulation/messages_GET";
-import * as musicPOST from "../endpoints/simulation/music_POST";
-import * as worldPOST from "../endpoints/simulation/world_POST";
-import * as tokenPOST from "../endpoints/_realtime/token_POST";
-import * as sendPOST from "../endpoints/_realtime/send_POST";
-import * as lastseenPOST from "../endpoints/_realtime/lastseen_POST";
+import * as sessionPOST from "../endpoints/simulation/session_POST.js";
+import * as sessionGET from "../endpoints/simulation/session_GET.js";
+import * as chatPOST from "../endpoints/simulation/chat_POST.js";
+import * as messagesGET from "../endpoints/simulation/messages_GET.js";
+import * as musicPOST from "../endpoints/simulation/music_POST.js";
+import * as worldPOST from "../endpoints/simulation/world_POST.js";
+import * as tokenPOST from "../endpoints/_realtime/token_POST.js";
+import * as sendPOST from "../endpoints/_realtime/send_POST.js";
+import * as lastseenPOST from "../endpoints/_realtime/lastseen_POST.js";
 
 const routes: Record<
   string,
