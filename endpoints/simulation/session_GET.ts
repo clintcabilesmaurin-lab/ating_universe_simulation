@@ -1,7 +1,7 @@
 import superjson from "superjson";
 import { nanoid } from "nanoid";
-import { db } from "../../helpers/db";
-import type { OutputType } from "./session_POST.schema";
+import { db } from "../../helpers/db.js";
+import type { OutputType } from "./session_POST.schema.js";
 
 export async function handle(request: Request): Promise<Response> {
   try {
