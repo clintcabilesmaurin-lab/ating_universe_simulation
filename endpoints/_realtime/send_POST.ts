@@ -1,5 +1,5 @@
 import { publish } from "@floot/realtime";
-import { schema } from "./send_POST.schema";
+import { schema } from "./send_POST.schema.js";
 import superjson from "superjson";
 
 // The browser POSTs here and you publish server-side after authorizing the user.
