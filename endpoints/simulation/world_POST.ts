@@ -1,7 +1,7 @@
 import superjson from "superjson";
 import { publish } from "@floot/realtime";
-import { db } from "../../helpers/db";
-import type { InputType, OutputType } from "./world_POST.schema";
+import { db } from "../../helpers/db.js";
+import type { InputType, OutputType } from "./world_POST.schema.js";
 
 export async function handle(request: Request): Promise<Response> {
   try {
