@@ -1,6 +1,6 @@
 import superjson from "superjson";
-import { db } from "../../helpers/db";
-import type { OutputType } from "./messages_GET.schema";
+import { db } from "../../helpers/db.js";
+import type { OutputType } from "./messages_GET.schema.js";
 
 export async function handle(request: Request): Promise<Response> {
   try {

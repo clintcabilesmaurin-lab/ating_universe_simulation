@@ -2,7 +2,7 @@ import {
   getServerSupabaseClient,
   getServerSupabaseUrl,
   getServerSupabaseKey,
-} from "./supabase";
+} from "./supabase.js";
 import type {
   SimulationSession,
   SimulationMessage,
@@ -10,7 +10,7 @@ import type {
   SupabaseSessionRow,
   SupabaseMessageRow,
   SupabaseMemoryRow,
-} from "./schema";
+} from "./schema.js";
 
 function requireServerClient() {
   if (typeof window !== "undefined") {

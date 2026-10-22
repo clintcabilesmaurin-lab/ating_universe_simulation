@@ -1,8 +1,8 @@
 import superjson from "superjson";
 import { nanoid } from "nanoid";
 import { publish } from "@floot/realtime";
-import { db } from "../../helpers/db";
-import { chatSchema } from "./chat_POST.schema";
+import { db } from "../../helpers/db.js";
+import { chatSchema } from "./chat_POST.schema.js";
 
 export async function handle(request: Request): Promise<Response> {
   const json = (data: unknown, status = 200) =>

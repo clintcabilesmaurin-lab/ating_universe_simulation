@@ -1,8 +1,8 @@
 import superjson from "superjson";
 import { publish } from "@floot/realtime";
-import { db } from "../../helpers/db";
-import { musicLibrary } from "../../helpers/musicLibrary";
-import type { InputType, OutputType } from "./music_POST.schema";
+import { db } from "../../helpers/db.js";
+import { musicLibrary } from "../../helpers/musicLibrary.js";
+import type { InputType, OutputType } from "./music_POST.schema.js";
 
 export async function handle(request: Request): Promise<Response> {
   try {
