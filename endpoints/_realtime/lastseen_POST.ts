@@ -1,5 +1,5 @@
 import { lastSeen } from "@floot/realtime";
-import { schema } from "./lastseen_POST.schema";
+import { schema } from "./lastseen_POST.schema.js";
 import superjson from "superjson";
 
 // The browser POSTs { channel, userIds } and gets back { lastSeen: { userId: ts } }
